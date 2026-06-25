@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>{{ app_title }}</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero card">
+        <h1>商品照片，一键变成小红书种草笔记</h1>
+        <p>上传商品照片和一句描述，自动生成小红书风格封面图、配图和发布文案。</p>
+      </section>
+
+      <form class="card form-card" action="/generate" method="post" enctype="multipart/form-data">
+        <label class="field">
+          <span>上传商品图片</span>
+          <input type="file" name="image" accept="image/*" />
+        </label>
+
+        <label class="field">
+          <span>一句商品描述</span>
+          <textarea name="description" rows="3" placeholder="例如：便携保温杯，适合通勤和出行"></textarea>
+        </label>
+
+        <label class="field">
+          <span>内容类型</span>
+          <select name="content_type">
+            <option>好物推荐</option>
+            <option>真实测评</option>
+            <option>回购分享</option>
+            <option>超市购物</option>
+            <option>宝妈分享</option>
+            <option>优缺点分享</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>风格</span>
+          <select name="style">
+            <option>清新简约</option>
+            <option>真实测评</option>
+            <option>可爱手账</option>
+            <option>生活方式</option>
+          </select>
+        </label>
+
+        <button type="submit">生成种草笔记</button>
+      </form>
+    </main>
+    <script src="/static/js/app.js"></script>
+  </body>
+</html>

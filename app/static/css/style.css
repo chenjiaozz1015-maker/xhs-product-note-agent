@@ -1,0 +1,29 @@
+:root {
+  color-scheme: light;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #fff9f4;
+  color: #1f2937;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: linear-gradient(180deg, #fff9f4 0%, #fff 100%); }
+.page { max-width: 860px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.card { background: #fff; border-radius: 18px; padding: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
+.hero h1 { font-size: 1.5rem; margin: 0 0 8px; line-height: 1.25; }
+.hero p { margin: 0; color: #6b7280; line-height: 1.6; }
+.field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; font-size: 0.95rem; }
+.field input, .field textarea, .field select, button, .secondary-btn, .copy-btn { font: inherit; }
+.field input, .field textarea, .field select { width: 100%; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; }
+button, .secondary-btn, .copy-btn { border: none; border-radius: 999px; padding: 12px 16px; background: #ff6b6b; color: white; cursor: pointer; text-decoration: none; text-align: center; }
+.secondary-btn, .copy-btn { background: #2f80ed; }
+.image-grid { display: grid; gap: 12px; }
+.image-card { border: 1px solid #f3f4f6; border-radius: 16px; overflow: hidden; }
+.image-card img { width: 100%; height: auto; display: block; }
+.image-actions { padding: 10px; }
+.image-actions a { color: #2f80ed; text-decoration: none; font-weight: 600; }
+ul { padding-left: 18px; }
+li { margin-bottom: 6px; }
+@media (min-width: 768px) {
+  .page { padding: 32px; }
+  .image-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
