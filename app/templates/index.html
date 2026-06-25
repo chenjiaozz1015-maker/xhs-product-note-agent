@@ -14,10 +14,18 @@
       </section>
 
       <form class="card form-card" action="/generate" method="post" enctype="multipart/form-data">
-        <label class="field">
+        <div class="field">
           <span>上传商品图片</span>
-          <input type="file" name="image" accept="image/*" />
-        </label>
+          <div class="upload-box">
+            <input id="image-input" class="upload-input" type="file" name="image" accept="image/*" />
+            <div class="upload-preview" id="image-preview" role="button" tabindex="0" aria-label="上传商品图片">
+              <div class="upload-placeholder">
+                <strong>点击上传商品图片</strong>
+                <span>支持 JPG / PNG / WEBP</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <label class="field">
           <span>一句商品描述</span>

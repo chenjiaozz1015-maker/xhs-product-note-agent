@@ -17,7 +17,7 @@
         <h3>生成图片</h3>
         <div class="image-grid">
           {% for image_path in result.image_paths %}
-          <div class="image-card">
+          <div class="image-card" data-title="海报预览 {{ loop.index }}" data-name="海报{{ loop.index }}">
             <img src="{{ image_path }}" alt="生成图片" />
             <div class="image-actions">
               <a href="{{ image_path }}" download>下载</a>
@@ -26,6 +26,29 @@
           {% endfor %}
         </div>
       </section>
+
+      <div class="lightbox" id="lightbox" hidden>
+        <div class="lightbox-shell">
+          <div class="lightbox-header">
+            <div>
+              <div class="lightbox-eyebrow">笔记配图预览</div>
+              <div class="lightbox-title" id="lightbox-title">海报预览</div>
+            </div>
+            <button class="lightbox-close" type="button" aria-label="关闭大图">×</button>
+          </div>
+          <img id="lightbox-image" src="" alt="大图预览" />
+          <div class="lightbox-toolbar">
+            <div class="lightbox-actions">
+              <button class="lightbox-pill" type="button">♡ 88</button>
+              <button class="lightbox-pill" type="button">★ 收藏</button>
+            </div>
+            <div class="lightbox-meta">
+              <span>长按保存</span>
+              <a id="lightbox-download" href="#" download>下载</a>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <section class="card">
         <h3>标题候选</h3>
