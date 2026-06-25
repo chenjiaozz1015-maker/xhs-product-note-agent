@@ -27,7 +27,7 @@
         </div>
       </section>
 
-      <div class="lightbox" id="lightbox" hidden>
+      <div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="图片预览">
         <div class="lightbox-shell">
           <div class="lightbox-header">
             <div>
@@ -36,7 +36,9 @@
             </div>
             <button class="lightbox-close" type="button" aria-label="关闭大图">×</button>
           </div>
-          <img id="lightbox-image" src="" alt="大图预览" />
+          <div class="lightbox-image-wrap">
+            <img id="lightbox-image" src="" alt="大图预览" />
+          </div>
           <div class="lightbox-toolbar">
             <div class="lightbox-actions">
               <button class="lightbox-pill" type="button">♡ 88</button>

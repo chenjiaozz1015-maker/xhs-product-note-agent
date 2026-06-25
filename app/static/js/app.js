@@ -96,33 +96,65 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   if (lightbox && lightboxImage && closeButton) {
-    document.querySelectorAll('.image-card').forEach((card) => {
-      card.addEventListener('click', (event) => {
-        if (event.target.closest('a')) return;
-        const clickedImage = card.querySelector('img');
-        if (!clickedImage) return;
-        const previewSrc = clickedImage.currentSrc || clickedImage.src;
-        if (!previewSrc) return;
-        lightboxImage.src = previewSrc;
-        lightboxImage.alt = clickedImage.alt || '大图预览';
-        if (lightboxTitle) {
-          lightboxTitle.textContent = card.dataset.title || '海报预览';
-        }
-        if (lightboxDownload) {
-          lightboxDownload.href = previewSrc;
-          lightboxDownload.setAttribute('download', `${card.dataset.name || '种草机图片'}.png`);
-        }
-        lightbox.hidden = false;
-        document.body.style.overflow = 'hidden';
+    const openLightbox = (event, clickedImage) => {
+      const card = clickedImage.closest('.image-card');
+      if (!card) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      const previewSrc = clickedImage.src;
+      if (!previewSrc) return;
+
+      lightboxImage.src = previewSrc;
+      lightboxImage.alt = clickedImage.alt || '大图预览';
+      lightboxImage.style.display = 'block';
+
+      if (lightboxTitle) {
+        lightboxTitle.textContent = card.dataset.title || '海报预览';
+      }
+      if (lightboxDownload) {
+        lightboxDownload.href = previewSrc;
+        lightboxDownload.setAttribute('download', `${card.dataset.name || '种草机图片'}.png`);
+      }
+
+      lightbox.hidden = false;
+      document.body.style.overflow = 'hidden';
+    };
+
+    document.querySelectorAll('.image-card img').forEach((image) => {
+      image.addEventListener('click', (event) => {
+        openLightbox(event, image);
       });
     });
 
-    closeButton.addEventListener('click', closeLightbox);
+    document.querySelectorAll('.image-card a').forEach((link) => {
+      const image = link.querySelector('img');
+      if (!image) return;
+
+      link.addEventListener('click', (event) => {
+        openLightbox(event, image);
+      });
+    });
+
+    document.querySelectorAll('.image-actions a').forEach((downloadLink) => {
+      downloadLink.addEventListener('click', (event) => {
+        event.stopPropagation();
+      });
+    });
+
+    closeButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      closeLightbox();
+    });
+
     lightbox.addEventListener('click', (event) => {
       if (event.target === lightbox) {
         closeLightbox();
       }
     });
+
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') {
         closeLightbox();

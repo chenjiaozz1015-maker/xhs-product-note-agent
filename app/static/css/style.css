@@ -85,15 +85,29 @@ button, .secondary-btn, .copy-btn { border: none; border-radius: 999px; padding:
 .image-actions { padding: 10px; }
 .image-actions a { color: #2f80ed; text-decoration: none; font-weight: 600; }
 .lightbox[hidden] { display: none !important; }
-.lightbox { position: fixed; inset: 0; background: rgba(17, 24, 39, 0.7); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 1000; }
+.lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
 .lightbox-shell {
   position: relative;
+  width: min(92vw, 760px);
   max-width: 92vw;
-  max-height: 90vh;
+  max-height: min(90vh, 920px);
   background: #fff;
   border-radius: 24px;
   padding: 12px 12px 10px;
   box-shadow: 0 20px 45px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
 }
 .lightbox-header {
   display: flex;
@@ -115,7 +129,23 @@ button, .secondary-btn, .copy-btn { border: none; border-radius: 999px; padding:
   color: #111827;
   margin-top: 2px;
 }
-.lightbox img { display: block; max-width: 90vw; max-height: 74vh; width: auto; height: auto; object-fit: contain; border-radius: 16px; background: #fff; }
+.lightbox-image-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
+}
+.lightbox img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 90vw;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: 16px;
+  background: #fff;
+}
 .lightbox-toolbar {
   display: flex;
   justify-content: space-between;
@@ -150,12 +180,20 @@ button, .secondary-btn, .copy-btn { border: none; border-radius: 999px; padding:
   font-weight: 600;
 }
 .lightbox-close {
-  width: 38px;
-  height: 38px;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.95);
+  padding: 0;
+  background: #fff;
   color: #111827;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+  font-size: 1.65rem;
+  line-height: 1;
+  font-weight: 700;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.28);
   flex-shrink: 0;
 }
 ul { padding-left: 18px; }
