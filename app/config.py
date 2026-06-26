@@ -15,6 +15,6 @@ FONTS_DIR.mkdir(parents=True, exist_ok=True)
 
 APP_NAME = os.getenv("APP_NAME", "种草机")
 APP_TITLE = os.getenv("APP_TITLE", APP_NAME)
-APP_VERSION = "v0.1-7"
+APP_VERSION = "v0.1-8"
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))
