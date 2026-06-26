@@ -6,6 +6,7 @@ from app.config import FONTS_DIR, GENERATED_DIR, STATIC_DIR
 
 
 PROJECT_CJK_FONT_PATHS = (
+    FONTS_DIR / "NotoSansSC-Regular.ttf",
     FONTS_DIR / "NotoSansSC-Regular.otf",
     FONTS_DIR / "NotoSansCJK-Regular.ttc",
     FONTS_DIR / "SourceHanSansSC-Regular.otf",
