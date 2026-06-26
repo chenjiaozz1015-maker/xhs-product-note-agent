@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>{{ app_title }}</title>
-    <link rel="stylesheet" href="/static/css/style.css" />
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}" />
   </head>
   <body>
     <main class="page home-page">
@@ -110,6 +110,6 @@
       </form>
       <p class="version-note">种草机 {{ app_version }} 本地 MVP</p>
     </main>
-    <script src="/static/js/app.js"></script>
+    <script src="{{ url_for('static', path='js/app.js') }}"></script>
   </body>
 </html>

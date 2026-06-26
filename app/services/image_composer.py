@@ -2,24 +2,59 @@ from __future__ import annotations
 
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
-from app.config import GENERATED_DIR, STATIC_DIR
+from app.config import FONTS_DIR, GENERATED_DIR, STATIC_DIR
 
 
-WINDOWS_CHINESE_FONT_PATHS = (
+PROJECT_CJK_FONT_PATHS = (
+    FONTS_DIR / "NotoSansSC-Regular.otf",
+    FONTS_DIR / "NotoSansCJK-Regular.ttc",
+    FONTS_DIR / "SourceHanSansSC-Regular.otf",
+)
+
+LINUX_CJK_FONT_PATHS = (
+    Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
+    Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.otf"),
+    Path("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc"),
+    Path("/usr/share/fonts/truetype/noto/NotoSansSC-Regular.ttf"),
+    Path("/usr/share/fonts/truetype/wqy/wqy-microhei.ttc"),
+    Path("/usr/share/fonts/truetype/arphic/ukai.ttc"),
+)
+
+WINDOWS_CJK_FONT_PATHS = (
     Path("C:/Windows/Fonts/msyh.ttc"),
     Path("C:/Windows/Fonts/simhei.ttf"),
     Path("C:/Windows/Fonts/simsun.ttc"),
 )
 
+CJK_FONT_PATHS = PROJECT_CJK_FONT_PATHS + LINUX_CJK_FONT_PATHS + WINDOWS_CJK_FONT_PATHS
+_FONT_STATUS_PRINTED = False
 
-def load_font(size: int) -> ImageFont.ImageFont:
-    for font_path in WINDOWS_CHINESE_FONT_PATHS:
-        if not font_path.exists():
+
+def get_cjk_font_path() -> Path | None:
+    for font_path in CJK_FONT_PATHS:
+        if not font_path.exists() or not font_path.is_file():
             continue
         try:
-            return ImageFont.truetype(str(font_path), size)
+            ImageFont.truetype(str(font_path), 12)
+            return font_path
         except OSError:
             continue
+    return None
+
+
+def load_font(size: int) -> ImageFont.ImageFont:
+    global _FONT_STATUS_PRINTED
+
+    font_path = get_cjk_font_path()
+    if font_path:
+        if not _FONT_STATUS_PRINTED:
+            print(f"Using font: {font_path}")
+            _FONT_STATUS_PRINTED = True
+        return ImageFont.truetype(str(font_path), size)
+
+    if not _FONT_STATUS_PRINTED:
+        print("No CJK font found, Chinese text may render incorrectly.")
+        _FONT_STATUS_PRINTED = True
     return ImageFont.load_default()
 
 

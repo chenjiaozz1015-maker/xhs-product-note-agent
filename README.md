@@ -5,7 +5,7 @@
 上传商品照片、商品名称、商品类目和一句描述，自动生成小红书风格图片素材包和发布文案。
 
 ## 当前版本
-种草机 v0.1-5 本地 MVP
+种草机 v0.1-7 本地 MVP
 
 ## 适合谁
 - 普通小红书好物分享用户
@@ -99,11 +99,33 @@ GET /health
 {
   "status": "ok",
   "app": "zhongcaoji",
-  "version": "v0.1-5",
+  "version": "v0.1-7",
   "uploads_dir_exists": true,
-  "generated_dir_exists": true
+  "generated_dir_exists": true,
+  "static_dir_exists": true,
+  "css_file_exists": true,
+  "js_file_exists": true,
+  "font_file_exists": true,
+  "font_path": "/usr/share/fonts/..."
 }
 ```
+
+## 线上部署中文字体
+Pillow 生成图片时需要可用的中文字体，否则中文可能显示成方块。
+
+字体查找顺序：
+
+1. 优先使用项目内 `app/static/fonts/` 中的字体
+2. 其次使用 Linux 系统已安装的 CJK 字体
+3. 最后使用 Windows 本地开发环境字体
+
+如果 Render 环境没有中文字体，可以将开源授权字体放到 `app/static/fonts/`。推荐字体：
+
+- Noto Sans SC
+- Noto Sans CJK
+- Source Han Sans SC
+
+不要提交未经授权的商业字体。
 
 ## 后续部署建议
 当前项目适合部署到 Render、Railway、腾讯云轻量服务器等平台。
@@ -128,3 +150,5 @@ GET /health
 - v0.1-3：视觉收口、中文字体渲染修复
 - v0.1-4：试用版收口、商品名称 / 类目、类目化内容生成、错误提示
 - v0.1-5：上线前整理、部署准备、健康检查与环境说明
+- v0.1-6：Render 线上静态资源加载修复，健康检查增加静态文件状态
+- v0.1-7：Render 线上生成图片中文字体修复，健康检查增加字体诊断
