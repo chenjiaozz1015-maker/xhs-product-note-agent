@@ -100,9 +100,13 @@
         <article class="card copy-card">
           <div class="copy-card-header">
             <h2>小红书正文</h2>
-            <button class="btn btn-secondary copy-btn" type="button" data-copy-target="body">复制正文</button>
+            <div class="copy-card-actions">
+              <button class="btn btn-secondary copy-btn" type="button" data-copy-target="body">复制正文</button>
+              <button class="btn btn-ghost" id="edit-note-body-button" type="button">编辑正文</button>
+            </div>
           </div>
-          <div class="copy-content note-body" data-copy-source="body">{{ result.note_body }}</div>
+          <div class="copy-content note-body" id="note-body-display" data-copy-source="body" data-current-note-body="{{ result.note_body }}">{{ result.note_body }}</div>
+          <textarea class="note-body-editor" id="note-body-editor" hidden>{{ result.note_body }}</textarea>
         </article>
 
         <article class="card copy-card">

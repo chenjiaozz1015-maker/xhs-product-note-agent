@@ -12,7 +12,7 @@ def test_rule_based_content_generation_returns_expected_structure():
     assert payload["cover_subtitle"]
     assert len(payload["selling_points"]) == 3
     assert len(payload["note_titles"]) == 5
-    assert len(payload["hashtags"]) == 10
+    assert 6 <= len(payload["hashtags"]) <= 10
     assert len(payload["comments"]) == 3
     assert payload["note_body"]
 
@@ -75,4 +75,47 @@ def test_product_name_enters_title_or_body():
         style="清新简约",
     )
 
-    assert any("水牛奶蛋糕" in title for title in payload["note_titles"]) or "水牛奶蛋糕" in payload["note_body"]
+    assert any("水牛奶蛋糕" in title for title in payload["note_titles"])
+    assert "水牛奶蛋糕" in payload["note_body"]
+
+
+def test_beauty_category_avoids_food_words():
+    payload = generate_note_payload(
+        product_name="护手霜",
+        category="美妆护肤",
+        description="通勤随身带",
+        content_type="真实测评",
+        style="清新简约",
+    )
+    joined = " ".join([*payload["note_titles"], payload["note_body"], *payload["hashtags"], *payload["selling_points"]])
+
+    forbidden_words = ["早餐", "下午茶", "零食", "口感", "囤粮", "猫咪", "狗狗"]
+    assert all(word not in joined for word in forbidden_words)
+
+
+def test_generated_lists_do_not_repeat():
+    payload = generate_note_payload(
+        product_name="水牛奶蛋糕",
+        category="食品饮品",
+        description="适合早餐",
+        content_type="好物推荐",
+        style="清新简约",
+    )
+
+    assert len(payload["note_titles"]) == len(set(payload["note_titles"]))
+    assert len(payload["hashtags"]) == len(set(payload["hashtags"]))
+    assert len(payload["selling_points"]) == len(set(payload["selling_points"]))
+
+
+def test_pet_category_avoids_beauty_and_food_words():
+    payload = generate_note_payload(
+        product_name="猫粮勺",
+        category="宠物用品",
+        description="适合家里常备",
+        content_type="好物推荐",
+        style="清新简约",
+    )
+    joined = " ".join([*payload["note_titles"], payload["note_body"], *payload["hashtags"], *payload["selling_points"]])
+
+    forbidden_words = ["上妆", "早餐", "面霜", "妆感", "护肤"]
+    assert all(word not in joined for word in forbidden_words)

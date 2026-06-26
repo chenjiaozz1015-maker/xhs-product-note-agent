@@ -139,6 +139,36 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  const noteBodyDisplay = document.getElementById('note-body-display');
+  const noteBodyEditor = document.getElementById('note-body-editor');
+  const editNoteBodyButton = document.getElementById('edit-note-body-button');
+
+  if (noteBodyDisplay && noteBodyEditor && editNoteBodyButton) {
+    editNoteBodyButton.addEventListener('click', () => {
+      const isEditing = !noteBodyEditor.hidden;
+      if (isEditing) {
+        const updatedBody = noteBodyEditor.value.trim();
+        noteBodyDisplay.textContent = updatedBody;
+        noteBodyDisplay.dataset.currentNoteBody = updatedBody;
+        noteBodyDisplay.hidden = false;
+        noteBodyEditor.hidden = true;
+        editNoteBodyButton.textContent = '编辑正文';
+        editNoteBodyButton.classList.remove('btn-primary');
+        editNoteBodyButton.classList.add('btn-ghost');
+        showToast('正文已更新');
+        return;
+      }
+
+      noteBodyEditor.value = noteBodyDisplay.dataset.currentNoteBody || noteBodyDisplay.textContent.trim();
+      noteBodyDisplay.hidden = true;
+      noteBodyEditor.hidden = false;
+      noteBodyEditor.focus();
+      editNoteBodyButton.textContent = '保存修改';
+      editNoteBodyButton.classList.remove('btn-ghost');
+      editNoteBodyButton.classList.add('btn-primary');
+    });
+  }
+
   const lightbox = document.getElementById('lightbox');
   const lightboxImage = document.getElementById('lightbox-image');
   const lightboxTitle = document.getElementById('lightbox-title');
@@ -236,7 +266,12 @@ document.addEventListener('DOMContentLoaded', () => {
         .join('\n');
     }
     if (target === 'body') {
-      return document.querySelector('[data-copy-source="body"]')?.textContent?.trim() || '';
+      const editor = document.getElementById('note-body-editor');
+      if (editor && !editor.hidden) {
+        return editor.value.trim();
+      }
+      const display = document.querySelector('[data-copy-source="body"]');
+      return display?.dataset?.currentNoteBody || display?.textContent?.trim() || '';
     }
     if (target === 'hashtags') {
       return Array.from(document.querySelectorAll('[data-copy-source="hashtags"] span'))
