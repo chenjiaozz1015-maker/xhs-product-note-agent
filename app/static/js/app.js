@@ -250,6 +250,16 @@ document.addEventListener('DOMContentLoaded', () => {
         .filter(Boolean)
         .join('\n');
     }
+    if (target === 'feedback') {
+      return [
+        '【种草机试用反馈】',
+        '1. 商品类型：',
+        '2. 图片效果是否满意：',
+        '3. 文案是否贴合商品：',
+        '4. 哪一步不好用：',
+        '5. 希望增加的功能：',
+      ].join('\n');
+    }
 
     const titles = getCopyText('titles');
     const body = getCopyText('body');

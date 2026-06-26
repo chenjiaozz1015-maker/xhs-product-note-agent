@@ -14,10 +14,14 @@
           <p>下载图片，复制文案，就可以去小红书发布。</p>
         </div>
         <div class="result-actions">
-          <a class="btn btn-ghost" href="/">返回重新生成</a>
+          <a class="btn btn-ghost" href="/">换一张图/改描述再生成</a>
           <button class="btn btn-primary download-all-btn" type="button">下载全部图片</button>
           <button class="btn btn-secondary copy-btn" type="button" data-copy-target="all">复制全部发布文案</button>
         </div>
+      </section>
+
+      <section class="card regenerate-tip">
+        <p>想要更贴合商品？可以返回修改商品名称、类目或描述后重新生成。</p>
       </section>
 
       <section class="card image-package">
@@ -115,7 +119,23 @@
           </div>
         </article>
       </section>
-      <p class="version-note">种草机 {{ app_version }} 本地 MVP</p>
+
+      <section class="card feedback-card">
+        <div class="copy-card-header">
+          <div>
+            <h2>帮我改进这个试用版</h2>
+            <p>如果生成结果不够像小红书，或者文案不贴合商品，可以把你的建议发给我。</p>
+          </div>
+          <button class="btn btn-secondary copy-btn" type="button" data-copy-target="feedback">复制反馈模板</button>
+        </div>
+        <ol class="feedback-questions">
+          <li>图片像不像小红书内容？</li>
+          <li>文案是否贴合商品？</li>
+          <li>你最希望增加什么功能？</li>
+        </ol>
+      </section>
+
+      <p class="version-note">种草机 {{ app_version }} 在线试用版</p>
     </main>
     <script src="{{ url_for('static', path='js/app.js') }}"></script>
   </body>

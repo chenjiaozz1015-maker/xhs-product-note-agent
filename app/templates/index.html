@@ -10,7 +10,29 @@
     <main class="page home-page">
       <section class="hero card">
         <h1>商品照片，一键变成小红书种草笔记</h1>
-        <p>不会做封面、不会排版、不会写真实分享感文案也没关系。上传商品照片和一句描述，自动生成小红书风格封面图、配图和发布文案。</p>
+        <p>上传一张商品照片，填写商品名称和类目，自动生成小红书风格图片素材包和发布文案。</p>
+      </section>
+
+      <section class="card trial-card" aria-label="在线试用说明">
+        <div class="trial-grid">
+          <div>
+            <h2>适合</h2>
+            <ul>
+              <li>小红书好物分享</li>
+              <li>小商家商品种草</li>
+              <li>食品、日用品、美妆、宠物用品等简单商品内容</li>
+              <li>想快速把普通商品照片变成可发布图文的人</li>
+            </ul>
+          </div>
+          <div>
+            <h2>当前可以生成</h2>
+            <ul>
+              <li>封面图、卖点/体验图、总结推荐图</li>
+              <li>标题候选、正文、标签、评论引导</li>
+            </ul>
+          </div>
+        </div>
+        <p class="trial-note">当前是早期在线试用版。图片基于模板排版，商品图保持原样不重绘；文案基于规则模板生成，暂未接入大模型和图片识别。免费部署环境首次打开可能会慢一点。</p>
       </section>
 
       <section class="card intro-card" aria-label="使用流程">
@@ -28,7 +50,7 @@
             <strong>下载图片并复制文案</strong>
           </div>
         </div>
-        <p class="mvp-note">第一版为本地 MVP，生成图片基于模板排版，商品图保持原样不重绘。</p>
+        <p class="mvp-note">在线试用版会根据商品名称、类目和描述生成一组可发布素材。</p>
       </section>
 
       <form class="card form-card" action="/generate" method="post" enctype="multipart/form-data">
@@ -108,7 +130,7 @@
           </div>
         </div>
       </form>
-      <p class="version-note">种草机 {{ app_version }} 本地 MVP</p>
+      <p class="version-note">种草机 {{ app_version }} 在线试用版</p>
     </main>
     <script src="{{ url_for('static', path='js/app.js') }}"></script>
   </body>
