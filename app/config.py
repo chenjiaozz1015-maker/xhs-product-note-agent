@@ -11,7 +11,8 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 GENERATED_DIR.mkdir(parents=True, exist_ok=True)
 TEMPLATE_ASSETS_DIR.mkdir(parents=True, exist_ok=True)
 
-APP_TITLE = os.getenv("APP_TITLE", "种草机")
-APP_VERSION = "v0.1-4"
+APP_NAME = os.getenv("APP_NAME", "种草机")
+APP_TITLE = os.getenv("APP_TITLE", APP_NAME)
+APP_VERSION = os.getenv("APP_VERSION", "v0.1-5")
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))
