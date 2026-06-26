@@ -88,13 +88,19 @@
         <article class="card copy-card">
           <div class="copy-card-header">
             <h2>标题候选</h2>
-            <button class="btn btn-secondary copy-btn" type="button" data-copy-target="titles">复制全部标题</button>
+            <div class="copy-card-actions">
+              <button class="btn btn-secondary copy-btn" type="button" data-copy-target="titles">复制全部标题</button>
+              <button class="btn btn-ghost" id="edit-titles-button" type="button">编辑标题</button>
+            </div>
           </div>
-          <ol class="title-list" data-copy-source="titles">
+          <ol class="title-list" id="titles-display" data-copy-source="titles">
           {% for title in result.note_titles %}
             <li>{{ title }}</li>
           {% endfor %}
           </ol>
+          <textarea class="editable-list-editor" id="titles-editor" hidden>{% for title in result.note_titles %}{{ title }}{% if not loop.last %}
+{% endif %}{% endfor %}</textarea>
+          <p class="editor-hint" id="titles-editor-hint" hidden>每行一个标题，最多保留 5 条。</p>
         </article>
 
         <article class="card copy-card">
@@ -112,25 +118,36 @@
         <article class="card copy-card">
           <div class="copy-card-header">
             <h2>标签</h2>
-            <button class="btn btn-secondary copy-btn" type="button" data-copy-target="hashtags">复制标签</button>
+            <div class="copy-card-actions">
+              <button class="btn btn-secondary copy-btn" type="button" data-copy-target="hashtags">复制标签</button>
+              <button class="btn btn-ghost" id="edit-tags-button" type="button">编辑标签</button>
+            </div>
           </div>
-          <div class="tag-list" data-copy-source="hashtags">
+          <div class="tag-list" id="tags-display" data-copy-source="hashtags">
             {% for tag in result.hashtags %}
             <span>{{ tag }}</span>
             {% endfor %}
           </div>
+          <textarea class="editable-list-editor tag-editor" id="tags-editor" hidden>{{ result.hashtags | join(' ') }}</textarea>
+          <p class="editor-hint" id="tags-editor-hint" hidden>标签可用空格或换行分隔，最多保留 12 个。</p>
         </article>
 
         <article class="card copy-card">
           <div class="copy-card-header">
             <h2>评论引导</h2>
-            <button class="btn btn-secondary copy-btn" type="button" data-copy-target="comments">复制评论引导</button>
+            <div class="copy-card-actions">
+              <button class="btn btn-secondary copy-btn" type="button" data-copy-target="comments">复制评论引导</button>
+              <button class="btn btn-ghost" id="edit-comments-button" type="button">编辑评论引导</button>
+            </div>
           </div>
-          <div class="comment-list" data-copy-source="comments">
+          <div class="comment-list" id="comments-display" data-copy-source="comments">
           {% for comment in result.comments %}
             <p>{{ comment }}</p>
           {% endfor %}
           </div>
+          <textarea class="editable-list-editor" id="comments-editor" hidden>{% for comment in result.comments %}{{ comment }}{% if not loop.last %}
+{% endif %}{% endfor %}</textarea>
+          <p class="editor-hint" id="comments-editor-hint" hidden>每行一条评论引导，最多保留 5 条。</p>
         </article>
       </section>
 

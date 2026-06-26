@@ -169,6 +169,59 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  setupEditableList({
+    displayId: 'titles-display',
+    editorId: 'titles-editor',
+    hintId: 'titles-editor-hint',
+    buttonId: 'edit-titles-button',
+    itemSelector: 'li',
+    maxItems: 5,
+    editText: '编辑标题',
+    saveText: '保存标题',
+    savedText: '标题已更新',
+    renderItem: (text) => {
+      const item = document.createElement('li');
+      item.textContent = text;
+      return item;
+    },
+  });
+
+  setupEditableList({
+    displayId: 'tags-display',
+    editorId: 'tags-editor',
+    hintId: 'tags-editor-hint',
+    buttonId: 'edit-tags-button',
+    itemSelector: 'span',
+    maxItems: 12,
+    editText: '编辑标签',
+    saveText: '保存标签',
+    savedText: '标签已更新',
+    normalize: normalizeTags,
+    joinText: (items) => items.join(' '),
+    renderItem: (text) => {
+      const item = document.createElement('span');
+      item.textContent = text;
+      return item;
+    },
+  });
+
+  setupEditableList({
+    displayId: 'comments-display',
+    editorId: 'comments-editor',
+    hintId: 'comments-editor-hint',
+    buttonId: 'edit-comments-button',
+    itemSelector: 'p',
+    maxItems: 5,
+    editText: '编辑评论引导',
+    saveText: '保存评论引导',
+    savedText: '评论引导已更新',
+    renderItem: (text) => {
+      const item = document.createElement('p');
+      item.textContent = text;
+      return item;
+    },
+  });
+
   const lightbox = document.getElementById('lightbox');
   const lightboxImage = document.getElementById('lightbox-image');
   const lightboxTitle = document.getElementById('lightbox-title');
@@ -260,8 +313,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function getCopyText(target, sourceButton) {
     if (target === 'titles') {
-      return Array.from(document.querySelectorAll('[data-copy-source="titles"] li'))
-        .map((item, index) => `${index + 1}. ${item.textContent.trim()}`)
+      const editor = document.getElementById('titles-editor');
+      const titles = editor && !editor.hidden
+        ? normalizeLines(editor.value, 5)
+        : getDisplayItems('titles-display', 'li');
+
+      return titles
+        .map((item, index) => `${index + 1}. ${item}`)
         .filter(Boolean)
         .join('\n');
     }
@@ -274,15 +332,21 @@ document.addEventListener('DOMContentLoaded', () => {
       return display?.dataset?.currentNoteBody || display?.textContent?.trim() || '';
     }
     if (target === 'hashtags') {
-      return Array.from(document.querySelectorAll('[data-copy-source="hashtags"] span'))
-        .map((item) => item.textContent.trim())
-        .filter(Boolean)
+      const editor = document.getElementById('tags-editor');
+      if (editor && !editor.hidden) {
+        return normalizeTags(editor.value).join(' ');
+      }
+
+      return getDisplayItems('tags-display', 'span')
         .join(' ');
     }
     if (target === 'comments') {
-      return Array.from(document.querySelectorAll('[data-copy-source="comments"] p'))
-        .map((item) => item.textContent.trim())
-        .filter(Boolean)
+      const editor = document.getElementById('comments-editor');
+      if (editor && !editor.hidden) {
+        return normalizeLines(editor.value, 5).join('\n');
+      }
+
+      return getDisplayItems('comments-display', 'p')
         .join('\n');
     }
     if (target === 'trial-feedback') {
@@ -315,8 +379,100 @@ document.addEventListener('DOMContentLoaded', () => {
     const body = getCopyText('body');
     const hashtags = getCopyText('hashtags');
     const comments = getCopyText('comments');
-    return [`标题候选：\n${titles}`, `正文：\n${body}`, `标签：\n${hashtags}`, `评论引导：\n${comments}`]
-      .filter((section) => section.trim())
+    return [
+      buildCopySection('标题候选', titles),
+      buildCopySection('正文', body, true),
+      buildCopySection('标签', hashtags),
+      buildCopySection('评论引导', comments),
+    ]
+      .filter(Boolean)
       .join('\n\n');
+  }
+
+  function setupEditableList(options) {
+    const display = document.getElementById(options.displayId);
+    const editor = document.getElementById(options.editorId);
+    const hint = document.getElementById(options.hintId);
+    const button = document.getElementById(options.buttonId);
+    if (!display || !editor || !button) return;
+
+    const normalize = options.normalize || ((value) => normalizeLines(value, options.maxItems));
+    const joinText = options.joinText || ((items) => items.join('\n'));
+
+    button.addEventListener('click', () => {
+      const isEditing = !editor.hidden;
+      const currentItems = getDisplayItems(options.displayId, options.itemSelector);
+
+      if (isEditing) {
+        const nextItems = normalize(editor.value);
+        const itemsToSave = nextItems.length ? nextItems : currentItems;
+        renderEditableItems(display, itemsToSave, options.renderItem);
+        editor.value = joinText(itemsToSave);
+        display.hidden = false;
+        editor.hidden = true;
+        if (hint) hint.hidden = true;
+        setEditButtonState(button, false, options.editText);
+        showToast(options.savedText);
+        return;
+      }
+
+      editor.value = joinText(currentItems);
+      display.hidden = true;
+      editor.hidden = false;
+      if (hint) hint.hidden = false;
+      setEditButtonState(button, true, options.saveText);
+      editor.focus();
+    });
+  }
+
+  function setEditButtonState(button, isEditing, text) {
+    button.textContent = text;
+    button.classList.toggle('btn-primary', isEditing);
+    button.classList.toggle('btn-ghost', !isEditing);
+  }
+
+  function getDisplayItems(displayId, selector) {
+    const display = document.getElementById(displayId);
+    if (!display) return [];
+
+    return Array.from(display.querySelectorAll(selector))
+      .map((item) => item.textContent.trim())
+      .filter(Boolean);
+  }
+
+  function renderEditableItems(display, items, renderItem) {
+    display.textContent = '';
+    items.forEach((text) => {
+      display.appendChild(renderItem(text));
+    });
+  }
+
+  function normalizeLines(value, limit) {
+    return value
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .slice(0, limit);
+  }
+
+  function normalizeTags(value) {
+    const seen = new Set();
+    return value
+      .split(/[\s,，]+/)
+      .map((tag) => tag.trim())
+      .filter(Boolean)
+      .map((tag) => (tag.startsWith('#') ? tag : `#${tag}`))
+      .filter((tag) => {
+        if (seen.has(tag)) return false;
+        seen.add(tag);
+        return true;
+      })
+      .slice(0, 12);
+  }
+
+  function buildCopySection(label, content, keepWhenEmpty = false) {
+    const text = (content || '').trim();
+    if (!text && !keepWhenEmpty) return '';
+    return `${label}：\n${text}`;
   }
 });

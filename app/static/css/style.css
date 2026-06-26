@@ -307,7 +307,7 @@ button, .secondary-btn, .copy-btn, .btn {
 .copy-pack { display: grid; gap: 14px; }
 .copy-card { display: flex; flex-direction: column; gap: 14px; }
 .copy-card-header { display: flex; flex-direction: column; gap: 10px; }
-.copy-card-actions { display: flex; flex-direction: column; gap: 10px; }
+.copy-card-actions { display: flex; flex-direction: column; gap: 10px; flex-wrap: wrap; }
 .copy-card-actions .btn { width: 100%; }
 .title-list {
   list-style: none;
@@ -343,7 +343,8 @@ button, .secondary-btn, .copy-btn, .btn {
   margin-top: 1px;
 }
 .copy-content { padding: 14px; background: #f9fafb; white-space: pre-line; line-height: 1.75; color: #374151; }
-.note-body-editor {
+.note-body-editor,
+.editable-list-editor {
   width: 100%;
   min-height: 160px;
   border: 1px solid #f0e1d8;
@@ -355,7 +356,18 @@ button, .secondary-btn, .copy-btn, .btn {
   line-height: 1.75;
   resize: vertical;
 }
-.note-body-editor[hidden] { display: none; }
+.editable-list-editor {
+  min-height: 132px;
+}
+.note-body-editor[hidden],
+.editable-list-editor[hidden],
+.editor-hint[hidden] { display: none; }
+.editor-hint {
+  margin: -4px 0 0;
+  color: #9a5f44;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
 .tag-list { display: flex; flex-wrap: wrap; gap: 8px; }
 .tag-list span {
   display: inline-flex;
