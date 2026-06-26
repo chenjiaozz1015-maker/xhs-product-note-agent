@@ -39,55 +39,87 @@ def _draw_text(draw: ImageDraw.ImageDraw, text: str, xy: tuple[int, int], font: 
     draw.text(xy, text, font=font, fill=fill, anchor=anchor)
 
 
+def _fit_image(image: Image.Image, size: tuple[int, int]) -> Image.Image:
+    fitted = image.copy()
+    fitted.thumbnail(size, Image.Resampling.LANCZOS)
+
+    canvas = Image.new("RGBA", size, (255, 255, 255, 0))
+    x = (size[0] - fitted.width) // 2
+    y = (size[1] - fitted.height) // 2
+    canvas.alpha_composite(fitted, (x, y))
+    return canvas
+
+
 def compose_posters(input_image_path: str, output_dir: str | None = None, title: str = "种草机") -> list[str]:
     output_dir_path = Path(output_dir or GENERATED_DIR)
     output_dir_path.mkdir(parents=True, exist_ok=True)
 
     src = _load_source_image(input_image_path)
     width, height = 1080, 1440
-    photo = src.resize((760, 760))
 
-    font_title = load_font(54)
-    font_sub = load_font(30)
-    font_small = load_font(24)
-    font_card = load_font(26)
+    font_cover_title = load_font(68)
+    font_title = load_font(58)
+    font_sub = load_font(36)
+    font_small = load_font(30)
+    font_card = load_font(38)
+    font_card_small = load_font(32)
 
     short_title = (title or "种草机")[:18].replace("\n", " ")
 
-    cover = Image.new("RGBA", (width, height), (255, 248, 240, 255))
+    cover_photo = _fit_image(src, (820, 720))
+    cover = Image.new("RGBA", (width, height), (255, 247, 241, 255))
     cover_draw = ImageDraw.Draw(cover)
-    cover_draw.rounded_rectangle((70, 70, 1010, 1320), radius=32, fill=(255, 255, 255, 210))
-    cover_draw.rounded_rectangle((90, 90, 990, 1300), radius=28, outline=(244, 215, 193, 255), width=3)
-    cover_draw.rounded_rectangle((90, 1020, 270, 1120), radius=18, fill=(255, 176, 144, 255))
-    cover.alpha_composite(photo, (150, 220))
-    _draw_text(cover_draw, "好物推荐", (110, 1035), font_small, (255, 255, 255, 255))
-    _draw_text(cover_draw, short_title, (100, 1120), font_title, (50, 50, 50, 255))
-    _draw_text(cover_draw, "轻分享｜真实体验｜小红书风格", (100, 1210), font_sub, (113, 113, 113, 255))
+    cover_draw.rounded_rectangle((56, 60, 1024, 1370), radius=42, fill=(255, 255, 255, 238))
+    cover_draw.rounded_rectangle((92, 108, 988, 890), radius=36, fill=(255, 239, 228, 255))
+    cover_draw.rounded_rectangle((116, 126, 356, 186), radius=30, fill=(255, 112, 130, 255))
+    cover.alpha_composite(cover_photo, (130, 150))
+    cover_draw.rounded_rectangle((80, 910, 1000, 1338), radius=36, fill=(255, 255, 255, 252))
+    cover_draw.rounded_rectangle((114, 964, 318, 1034), radius=28, fill=(255, 112, 130, 255))
+    _draw_text(cover_draw, "好物推荐", (146, 138), font_small, (255, 255, 255, 255))
+    _draw_text(cover_draw, "好物推荐", (146, 980), font_small, (255, 255, 255, 255))
+    _draw_text(cover_draw, short_title, (116, 1070), font_cover_title, (38, 38, 38, 255))
+    _draw_text(cover_draw, "真实体验感 · 小红书发布素材", (118, 1180), font_sub, (105, 82, 70, 255))
+    _draw_text(cover_draw, "封面图 / 配图 / 文案一次生成", (118, 1250), font_small, (142, 110, 96, 255))
 
+    points_photo = _fit_image(src, (820, 500))
     points = Image.new("RGBA", (width, height), (250, 247, 240, 255))
     points_draw = ImageDraw.Draw(points)
-    points_draw.rounded_rectangle((40, 40, 1040, 1400), radius=34, fill=(255, 255, 255, 245))
-    points_draw.rounded_rectangle((90, 90, 1000, 1160), radius=24, fill=(255, 243, 232, 255))
-    points.alpha_composite(photo.resize((620, 420)), (110, 140))
-    _draw_text(points_draw, "我喜欢它的 3 个点", (120, 600), font_title, (50, 50, 50, 255))
-    points_draw.rounded_rectangle((120, 680, 960, 810), radius=18, fill=(255, 255, 255, 255))
-    points_draw.rounded_rectangle((120, 850, 960, 980), radius=18, fill=(255, 255, 255, 255))
-    points_draw.rounded_rectangle((120, 1020, 960, 1150), radius=18, fill=(255, 255, 255, 255))
-    _draw_text(points_draw, "• 日常好用", (150, 710), font_card, (90, 90, 90, 255))
-    _draw_text(points_draw, "• 质感舒服", (150, 880), font_card, (90, 90, 90, 255))
-    _draw_text(points_draw, "• 适合轻分享", (150, 1050), font_card, (90, 90, 90, 255))
+    points_draw.rounded_rectangle((48, 48, 1032, 1392), radius=42, fill=(255, 255, 255, 246))
+    points_draw.rounded_rectangle((88, 92, 992, 650), radius=34, fill=(255, 241, 230, 255))
+    points.alpha_composite(points_photo, (130, 122))
+    points_draw.rounded_rectangle((92, 690, 988, 780), radius=32, fill=(255, 226, 211, 255))
+    _draw_text(points_draw, "我喜欢它的 3 个点", (126, 708), font_title, (42, 42, 42, 255))
 
+    point_cards = [
+        ((116, 830, 964, 970), "01", "日常好用"),
+        ((116, 1005, 964, 1145), "02", "质感舒服"),
+        ((116, 1180, 964, 1320), "03", "适合轻分享"),
+    ]
+    for box, number, text in point_cards:
+        points_draw.rounded_rectangle(box, radius=26, fill=(255, 255, 255, 255), outline=(242, 223, 211, 255), width=2)
+        points_draw.ellipse((box[0] + 30, box[1] + 38, box[0] + 94, box[1] + 102), fill=(255, 112, 130, 255))
+        _draw_text(points_draw, number, (box[0] + 45, box[1] + 50), font_small, (255, 255, 255, 255))
+        _draw_text(points_draw, text, (box[0] + 124, box[1] + 48), font_card, (66, 66, 66, 255))
+
+    summary_photo = _fit_image(src, (560, 520))
     summary = Image.new("RGBA", (width, height), (248, 248, 245, 255))
     summary_draw = ImageDraw.Draw(summary)
-    summary_draw.rounded_rectangle((40, 40, 1040, 1400), radius=34, fill=(255, 255, 255, 240))
-    summary_draw.rounded_rectangle((80, 80, 1000, 180), radius=20, fill=(255, 225, 205, 255))
-    _draw_text(summary_draw, "最后想说", (120, 100), font_sub, (120, 90, 70, 255))
-    _draw_text(summary_draw, "适合日常轻分享", (120, 230), font_title, (50, 50, 50, 255))
-    summary.alpha_composite(photo.resize((420, 420)), (160, 310))
-    summary_draw.rounded_rectangle((90, 790, 990, 1320), radius=24, fill=(248, 246, 238, 255))
-    _draw_text(summary_draw, "适合：喜欢轻分享的人", (120, 830), font_card, (70, 70, 70, 255))
-    _draw_text(summary_draw, "推荐理由：好看、好用、日常容易带", (120, 900), font_card, (70, 70, 70, 255))
-    _draw_text(summary_draw, "一句话：很值得试试", (120, 970), font_card, (70, 70, 70, 255))
+    summary_draw.rounded_rectangle((48, 48, 1032, 1392), radius=42, fill=(255, 255, 255, 244))
+    summary_draw.rounded_rectangle((88, 88, 992, 210), radius=34, fill=(255, 225, 205, 255))
+    _draw_text(summary_draw, "最后想说", (128, 112), font_sub, (120, 90, 70, 255))
+    _draw_text(summary_draw, "适合日常轻分享", (128, 250), font_title, (42, 42, 42, 255))
+    summary_draw.rounded_rectangle((250, 340, 830, 900), radius=34, fill=(255, 243, 232, 255))
+    summary.alpha_composite(summary_photo, (260, 360))
+
+    summary_cards = [
+        ((92, 945, 988, 1065), "适合谁", "喜欢轻分享的人"),
+        ((92, 1090, 988, 1210), "推荐理由", "好看、好用、日常容易带"),
+        ((92, 1235, 988, 1355), "一句话总结", "很值得试试"),
+    ]
+    for box, label, text in summary_cards:
+        summary_draw.rounded_rectangle(box, radius=24, fill=(248, 246, 238, 255), outline=(234, 226, 214, 255), width=2)
+        _draw_text(summary_draw, label, (box[0] + 34, box[1] + 24), font_card_small, (145, 105, 82, 255))
+        _draw_text(summary_draw, text, (box[0] + 230, box[1] + 24), font_card, (60, 60, 60, 255))
 
     variants = [cover, points, summary]
     paths = []

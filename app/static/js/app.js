@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function getCopyText(target) {
     if (target === 'titles') {
       return Array.from(document.querySelectorAll('[data-copy-source="titles"] li'))
-        .map((item) => item.textContent.trim())
+        .map((item, index) => `${index + 1}. ${item.textContent.trim()}`)
         .filter(Boolean)
         .join('\n');
     }
@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const body = getCopyText('body');
     const hashtags = getCopyText('hashtags');
     const comments = getCopyText('comments');
-    return [`标题候选：\n${titles}`, `小红书正文：\n${body}`, `标签：\n${hashtags}`, `评论引导：\n${comments}`]
+    return [`标题候选：\n${titles}`, `正文：\n${body}`, `标签：\n${hashtags}`, `评论引导：\n${comments}`]
       .filter((section) => section.trim())
       .join('\n\n');
   }
