@@ -52,6 +52,55 @@ document.addEventListener('DOMContentLoaded', () => {
     showPlaceholder();
   }
 
+  const form = document.querySelector('.form-card');
+  const formMessage = document.getElementById('form-message');
+  if (form && imageInput && formMessage) {
+    const submitButton = form.querySelector('button[type="submit"]');
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+
+    const showFormMessage = (message, type = 'error') => {
+      formMessage.textContent = message;
+      formMessage.hidden = false;
+      formMessage.className = `form-message form-message-${type}`;
+    };
+
+    const restoreSubmit = () => {
+      if (!submitButton) return;
+      submitButton.disabled = false;
+      submitButton.textContent = submitButton.dataset.originalText || '生成种草笔记';
+    };
+
+    form.addEventListener('submit', (event) => {
+      const file = imageInput.files && imageInput.files[0];
+      if (!file) {
+        event.preventDefault();
+        showFormMessage('请先上传一张商品图片');
+        restoreSubmit();
+        return;
+      }
+
+      if (!allowedTypes.includes(file.type)) {
+        event.preventDefault();
+        showFormMessage('请上传 JPG、PNG 或 WEBP 格式的商品图片');
+        restoreSubmit();
+        return;
+      }
+
+      const description = form.querySelector('[name="description"]')?.value?.trim() || '';
+      if (!description) {
+        showFormMessage('可以补充一句商品描述，生成内容会更贴近你的商品', 'warning');
+      } else {
+        formMessage.hidden = true;
+      }
+
+      if (submitButton) {
+        submitButton.dataset.originalText = submitButton.textContent.trim();
+        submitButton.textContent = '正在生成...';
+        submitButton.disabled = true;
+      }
+    });
+  }
+
   document.querySelectorAll('.copy-btn').forEach((button) => {
     button.dataset.originalText = button.textContent.trim();
     button.addEventListener('click', async () => {

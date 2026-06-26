@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/static/css/style.css" />
   </head>
   <body>
-    <main class="page">
+    <main class="page home-page">
       <section class="hero card">
         <h1>商品照片，一键变成小红书种草笔记</h1>
         <p>不会做封面、不会排版、不会写真实分享感文案也没关系。上传商品照片和一句描述，自动生成小红书风格封面图、配图和发布文案。</p>
@@ -32,48 +32,83 @@
       </section>
 
       <form class="card form-card" action="/generate" method="post" enctype="multipart/form-data">
-        <div class="field">
-          <span>上传商品图片</span>
-          <div class="upload-box">
-            <input id="image-input" class="upload-input" type="file" name="image" accept="image/*" />
-            <div class="upload-preview" id="image-preview" role="button" tabindex="0" aria-label="上传商品图片">
-              <div class="upload-placeholder">
-                <strong>点击上传商品图片</strong>
-                <span>支持 JPG / PNG / WEBP</span>
+        {% if error %}
+        <div class="form-message form-message-error">{{ error }}</div>
+        {% endif %}
+        {% if warning %}
+        <div class="form-message form-message-warning">{{ warning }}</div>
+        {% endif %}
+        <div class="form-message" id="form-message" hidden></div>
+
+        <div class="form-grid">
+          <div class="form-media-column">
+            <div class="field">
+              <span>上传商品图片</span>
+              <div class="upload-box">
+                <input id="image-input" class="upload-input" type="file" name="image" accept="image/*" />
+                <div class="upload-preview" id="image-preview" role="button" tabindex="0" aria-label="上传商品图片">
+                  <div class="upload-placeholder">
+                    <strong>点击上传商品图片</strong>
+                    <span>支持 JPG / PNG / WEBP</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+
+          <div class="form-fields-column">
+            <label class="field">
+              <span>商品名称</span>
+              <input name="product_name" type="text" placeholder="例如：水牛奶蛋糕、保温杯、护手霜、猫粮" />
+              <small>选填，填写后标题和正文会更准确。</small>
+            </label>
+
+            <label class="field">
+              <span>商品类目</span>
+              <select name="category">
+                <option>其他好物</option>
+                <option>食品饮品</option>
+                <option>美妆护肤</option>
+                <option>家居日用</option>
+                <option>母婴儿童</option>
+                <option>宠物用品</option>
+                <option>服饰配件</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>一句商品描述</span>
+              <textarea name="description" rows="3" placeholder="写清楚商品是什么，生成内容会更准确。"></textarea>
+              <small>选填，可以补充口味、质地、使用场景或适合人群。</small>
+            </label>
+
+            <label class="field">
+              <span>内容类型</span>
+              <select name="content_type">
+                <option>好物推荐</option>
+                <option>真实测评</option>
+                <option>回购分享</option>
+                <option>超市购物</option>
+                <option>宝妈分享</option>
+                <option>优缺点分享</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>风格</span>
+              <select name="style">
+                <option>清新简约</option>
+                <option>真实测评</option>
+                <option>可爱手账</option>
+                <option>生活方式</option>
+              </select>
+            </label>
+
+            <button type="submit">生成种草笔记</button>
+          </div>
         </div>
-
-        <label class="field">
-          <span>一句商品描述</span>
-          <textarea name="description" rows="3" placeholder="例如：便携保温杯，适合通勤和出行"></textarea>
-        </label>
-
-        <label class="field">
-          <span>内容类型</span>
-          <select name="content_type">
-            <option>好物推荐</option>
-            <option>真实测评</option>
-            <option>回购分享</option>
-            <option>超市购物</option>
-            <option>宝妈分享</option>
-            <option>优缺点分享</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span>风格</span>
-          <select name="style">
-            <option>清新简约</option>
-            <option>真实测评</option>
-            <option>可爱手账</option>
-            <option>生活方式</option>
-          </select>
-        </label>
-
-        <button type="submit">生成种草笔记</button>
       </form>
+      <p class="version-note">种草机 {{ app_version }} 本地 MVP</p>
     </main>
     <script src="/static/js/app.js"></script>
   </body>

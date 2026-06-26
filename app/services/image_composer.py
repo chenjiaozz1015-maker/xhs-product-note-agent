@@ -50,7 +50,17 @@ def _fit_image(image: Image.Image, size: tuple[int, int]) -> Image.Image:
     return canvas
 
 
-def compose_posters(input_image_path: str, output_dir: str | None = None, title: str = "种草机") -> list[str]:
+def compose_posters(
+    input_image_path: str,
+    output_dir: str | None = None,
+    title: str = "种草机",
+    subtitle: str = "",
+    selling_points: list[str] | None = None,
+    summary_title: str = "",
+    suitable_for: str = "",
+    recommend_reason: str = "",
+    summary_sentence: str = "",
+) -> list[str]:
     output_dir_path = Path(output_dir or GENERATED_DIR)
     output_dir_path.mkdir(parents=True, exist_ok=True)
 
@@ -65,6 +75,14 @@ def compose_posters(input_image_path: str, output_dir: str | None = None, title:
     font_card_small = load_font(32)
 
     short_title = (title or "种草机")[:18].replace("\n", " ")
+    short_subtitle = (subtitle or "真实体验感 · 小红书发布素材")[:22].replace("\n", " ")
+    point_texts = (selling_points or ["日常好用", "质感舒服", "适合轻分享"])[:3]
+    while len(point_texts) < 3:
+        point_texts.append("适合轻分享")
+    summary_title_text = (summary_title or "适合日常轻分享")[:18].replace("\n", " ")
+    suitable_for_text = (suitable_for or "喜欢轻分享的人")[:16].replace("\n", " ")
+    recommend_reason_text = (recommend_reason or "好看、好用、日常容易带")[:18].replace("\n", " ")
+    summary_sentence_text = (summary_sentence or "很值得试试")[:18].replace("\n", " ")
 
     cover_photo = _fit_image(src, (820, 720))
     cover = Image.new("RGBA", (width, height), (255, 247, 241, 255))
@@ -78,7 +96,7 @@ def compose_posters(input_image_path: str, output_dir: str | None = None, title:
     _draw_text(cover_draw, "好物推荐", (146, 138), font_small, (255, 255, 255, 255))
     _draw_text(cover_draw, "好物推荐", (146, 980), font_small, (255, 255, 255, 255))
     _draw_text(cover_draw, short_title, (116, 1070), font_cover_title, (38, 38, 38, 255))
-    _draw_text(cover_draw, "真实体验感 · 小红书发布素材", (118, 1180), font_sub, (105, 82, 70, 255))
+    _draw_text(cover_draw, short_subtitle, (118, 1180), font_sub, (105, 82, 70, 255))
     _draw_text(cover_draw, "封面图 / 配图 / 文案一次生成", (118, 1250), font_small, (142, 110, 96, 255))
 
     points_photo = _fit_image(src, (820, 500))
@@ -91,9 +109,9 @@ def compose_posters(input_image_path: str, output_dir: str | None = None, title:
     _draw_text(points_draw, "我喜欢它的 3 个点", (126, 708), font_title, (42, 42, 42, 255))
 
     point_cards = [
-        ((116, 830, 964, 970), "01", "日常好用"),
-        ((116, 1005, 964, 1145), "02", "质感舒服"),
-        ((116, 1180, 964, 1320), "03", "适合轻分享"),
+        ((116, 830, 964, 970), "01", point_texts[0][:18]),
+        ((116, 1005, 964, 1145), "02", point_texts[1][:18]),
+        ((116, 1180, 964, 1320), "03", point_texts[2][:18]),
     ]
     for box, number, text in point_cards:
         points_draw.rounded_rectangle(box, radius=26, fill=(255, 255, 255, 255), outline=(242, 223, 211, 255), width=2)
@@ -107,14 +125,14 @@ def compose_posters(input_image_path: str, output_dir: str | None = None, title:
     summary_draw.rounded_rectangle((48, 48, 1032, 1392), radius=42, fill=(255, 255, 255, 244))
     summary_draw.rounded_rectangle((88, 88, 992, 210), radius=34, fill=(255, 225, 205, 255))
     _draw_text(summary_draw, "最后想说", (128, 112), font_sub, (120, 90, 70, 255))
-    _draw_text(summary_draw, "适合日常轻分享", (128, 250), font_title, (42, 42, 42, 255))
+    _draw_text(summary_draw, summary_title_text, (128, 250), font_title, (42, 42, 42, 255))
     summary_draw.rounded_rectangle((250, 340, 830, 900), radius=34, fill=(255, 243, 232, 255))
     summary.alpha_composite(summary_photo, (260, 360))
 
     summary_cards = [
-        ((92, 945, 988, 1065), "适合谁", "喜欢轻分享的人"),
-        ((92, 1090, 988, 1210), "推荐理由", "好看、好用、日常容易带"),
-        ((92, 1235, 988, 1355), "一句话总结", "很值得试试"),
+        ((92, 945, 988, 1065), "适合谁", suitable_for_text),
+        ((92, 1090, 988, 1210), "推荐理由", recommend_reason_text),
+        ((92, 1235, 988, 1355), "一句话总结", summary_sentence_text),
     ]
     for box, label, text in summary_cards:
         summary_draw.rounded_rectangle(box, radius=24, fill=(248, 246, 238, 255), outline=(234, 226, 214, 255), width=2)

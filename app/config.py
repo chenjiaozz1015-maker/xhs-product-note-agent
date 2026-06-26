@@ -12,5 +12,6 @@ GENERATED_DIR.mkdir(parents=True, exist_ok=True)
 TEMPLATE_ASSETS_DIR.mkdir(parents=True, exist_ok=True)
 
 APP_TITLE = os.getenv("APP_TITLE", "种草机")
+APP_VERSION = "v0.1-4"
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))
