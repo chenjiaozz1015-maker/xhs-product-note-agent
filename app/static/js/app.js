@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
     button.dataset.originalText = button.textContent.trim();
     button.addEventListener('click', async () => {
       const target = button.getAttribute('data-copy-target');
-      const text = getCopyText(target);
+      const text = getCopyText(target, button);
       try {
         await navigator.clipboard.writeText(text);
         button.textContent = '已复制';
@@ -228,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => toast.remove(), 1500);
   }
 
-  function getCopyText(target) {
+  function getCopyText(target, sourceButton) {
     if (target === 'titles') {
       return Array.from(document.querySelectorAll('[data-copy-source="titles"] li'))
         .map((item, index) => `${index + 1}. ${item.textContent.trim()}`)
@@ -250,14 +250,29 @@ document.addEventListener('DOMContentLoaded', () => {
         .filter(Boolean)
         .join('\n');
     }
-    if (target === 'feedback') {
+    if (target === 'trial-feedback') {
       return [
         '【种草机试用反馈】',
-        '1. 商品类型：',
-        '2. 图片效果是否满意：',
-        '3. 文案是否贴合商品：',
+        '1. 我测试的商品类型：',
+        '2. 生成图片效果：满意 / 一般 / 不满意',
+        '3. 文案是否贴合商品：贴合 / 一般 / 不贴合',
         '4. 哪一步不好用：',
-        '5. 希望增加的功能：',
+        '5. 我最希望增加的功能：',
+        '6. 其他建议：',
+      ].join('\n');
+    }
+    if (target === 'result-feedback') {
+      const productName = sourceButton?.dataset?.productName || '';
+      const category = sourceButton?.dataset?.category || '';
+      return [
+        '【种草机生成结果反馈】',
+        `1. 商品名称：${productName}`,
+        `2. 商品类目：${category}`,
+        '3. 图片效果是否像小红书：像 / 一般 / 不像',
+        '4. 文案是否贴合商品：贴合 / 一般 / 不贴合',
+        '5. 哪张图最有用：封面图 / 卖点图 / 总结图',
+        '6. 哪个结果不满意：',
+        '7. 希望增加的功能：',
       ].join('\n');
     }
 

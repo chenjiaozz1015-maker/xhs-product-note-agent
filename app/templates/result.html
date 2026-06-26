@@ -21,7 +21,17 @@
       </section>
 
       <section class="card regenerate-tip">
-        <p>想要更贴合商品？可以返回修改商品名称、类目或描述后重新生成。</p>
+        <div>
+          <h2>生成效果不满意？</h2>
+          <p>可以返回首页，补充或调整：</p>
+          <ul>
+            <li>商品名称：写具体一点，例如“水牛奶蛋糕”而不是“蛋糕”</li>
+            <li>商品类目：选择最接近的类目</li>
+            <li>商品描述：补充口味、质地、使用场景、适合人群</li>
+            <li>内容类型：好物推荐、真实测评、回购分享等会影响表达角度</li>
+          </ul>
+        </div>
+        <a class="btn btn-ghost" href="/">返回修改后重新生成</a>
       </section>
 
       <section class="card image-package">
@@ -124,9 +134,15 @@
         <div class="copy-card-header">
           <div>
             <h2>帮我改进这个试用版</h2>
-            <p>如果生成结果不够像小红书，或者文案不贴合商品，可以把你的建议发给我。</p>
+            <p>如果这次生成结果不够理想，可以复制下面的反馈模板发给我，也可以根据提示回到首页修改商品名称、类目或描述后再生成一次。</p>
           </div>
-          <button class="btn btn-secondary copy-btn" type="button" data-copy-target="feedback">复制反馈模板</button>
+          <button
+            class="btn btn-secondary copy-btn"
+            type="button"
+            data-copy-target="result-feedback"
+            data-product-name="{{ result.product_name }}"
+            data-category="{{ result.category }}"
+          >复制反馈模板</button>
         </div>
         <ol class="feedback-questions">
           <li>图片像不像小红书内容？</li>

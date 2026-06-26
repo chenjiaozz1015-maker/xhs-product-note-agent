@@ -526,10 +526,15 @@ button, .secondary-btn, .copy-btn, .btn {
 .trial-note,
 .feedback-card p,
 .regenerate-tip p { margin: 0; color: #7c6a62; line-height: 1.65; }
-.regenerate-tip { background: #fffaf7; border-color: #f0e1d8; }
+.regenerate-tip { display: flex; flex-direction: column; gap: 14px; background: #fffaf7; border-color: #f0e1d8; }
+.regenerate-tip h2 { margin: 0 0 8px; font-size: 1.05rem; }
+.regenerate-tip ul { margin: 8px 0 0; padding-left: 20px; color: #4b5563; line-height: 1.7; }
+.regenerate-tip .btn { width: 100%; }
 .feedback-card { border-color: #dbeafe; background: linear-gradient(135deg, #fff 0%, #f8fbff 100%); }
 .feedback-questions { display: grid; gap: 6px; }
 
 @media (min-width: 768px) {
   .trial-grid { grid-template-columns: 1fr 1fr; gap: 20px; }
+  .regenerate-tip { flex-direction: row; align-items: center; justify-content: space-between; }
+  .regenerate-tip .btn { width: auto; flex: 0 0 auto; }
 }
