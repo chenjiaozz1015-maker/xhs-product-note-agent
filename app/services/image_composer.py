@@ -5,6 +5,24 @@ from PIL import Image, ImageDraw, ImageFont
 from app.config import GENERATED_DIR, STATIC_DIR
 
 
+WINDOWS_CHINESE_FONT_PATHS = (
+    Path("C:/Windows/Fonts/msyh.ttc"),
+    Path("C:/Windows/Fonts/simhei.ttf"),
+    Path("C:/Windows/Fonts/simsun.ttc"),
+)
+
+
+def load_font(size: int) -> ImageFont.ImageFont:
+    for font_path in WINDOWS_CHINESE_FONT_PATHS:
+        if not font_path.exists():
+            continue
+        try:
+            return ImageFont.truetype(str(font_path), size)
+        except OSError:
+            continue
+    return ImageFont.load_default()
+
+
 def _load_source_image(input_image_path: str) -> Image.Image:
     source_path = Path(input_image_path)
     if source_path.exists() and source_path.is_file():
@@ -29,16 +47,10 @@ def compose_posters(input_image_path: str, output_dir: str | None = None, title:
     width, height = 1080, 1440
     photo = src.resize((760, 760))
 
-    try:
-        font_title = ImageFont.truetype("arial.ttf", 54)
-        font_sub = ImageFont.truetype("arial.ttf", 30)
-        font_small = ImageFont.truetype("arial.ttf", 24)
-        font_card = ImageFont.truetype("arial.ttf", 26)
-    except OSError:
-        font_title = ImageFont.load_default()
-        font_sub = ImageFont.load_default()
-        font_small = ImageFont.load_default()
-        font_card = ImageFont.load_default()
+    font_title = load_font(54)
+    font_sub = load_font(30)
+    font_small = load_font(24)
+    font_card = load_font(26)
 
     short_title = (title or "种草机")[:18].replace("\n", " ")
 

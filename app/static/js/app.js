@@ -56,17 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     button.dataset.originalText = button.textContent.trim();
     button.addEventListener('click', async () => {
       const target = button.getAttribute('data-copy-target');
-      let text = '';
-      const body = document.body.innerText;
-      if (target === 'titles') {
-        text = Array.from(document.querySelectorAll('li')).map((li) => li.textContent.trim()).join('\n');
-      } else if (target === 'body') {
-        text = document.querySelector('.card p')?.textContent?.trim() || '';
-      } else if (target === 'hashtags') {
-        text = document.querySelectorAll('.card p')[1]?.textContent?.trim() || '';
-      } else {
-        text = body;
-      }
+      const text = getCopyText(target);
       try {
         await navigator.clipboard.writeText(text);
         button.textContent = '已复制';
@@ -80,6 +70,23 @@ document.addEventListener('DOMContentLoaded', () => {
           button.textContent = button.dataset.originalText || '一键复制';
         }, 1500);
       }
+    });
+  });
+
+  document.querySelectorAll('.download-all-btn').forEach((button) => {
+    button.addEventListener('click', () => {
+      const links = Array.from(document.querySelectorAll('.single-download'));
+      links.forEach((link, index) => {
+        window.setTimeout(() => {
+          const download = document.createElement('a');
+          download.href = link.href;
+          download.download = link.getAttribute('download') || `小红书素材图${index + 1}.png`;
+          document.body.appendChild(download);
+          download.click();
+          download.remove();
+        }, index * 250);
+      });
+      showToast('已开始下载，如浏览器拦截请分别点击单张下载');
     });
   });
 
@@ -170,5 +177,37 @@ document.addEventListener('DOMContentLoaded', () => {
     toast.textContent = message;
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 1500);
+  }
+
+  function getCopyText(target) {
+    if (target === 'titles') {
+      return Array.from(document.querySelectorAll('[data-copy-source="titles"] li'))
+        .map((item) => item.textContent.trim())
+        .filter(Boolean)
+        .join('\n');
+    }
+    if (target === 'body') {
+      return document.querySelector('[data-copy-source="body"]')?.textContent?.trim() || '';
+    }
+    if (target === 'hashtags') {
+      return Array.from(document.querySelectorAll('[data-copy-source="hashtags"] span'))
+        .map((item) => item.textContent.trim())
+        .filter(Boolean)
+        .join(' ');
+    }
+    if (target === 'comments') {
+      return Array.from(document.querySelectorAll('[data-copy-source="comments"] p'))
+        .map((item) => item.textContent.trim())
+        .filter(Boolean)
+        .join('\n');
+    }
+
+    const titles = getCopyText('titles');
+    const body = getCopyText('body');
+    const hashtags = getCopyText('hashtags');
+    const comments = getCopyText('comments');
+    return [`标题候选：\n${titles}`, `小红书正文：\n${body}`, `标签：\n${hashtags}`, `评论引导：\n${comments}`]
+      .filter((section) => section.trim())
+      .join('\n\n');
   }
 });

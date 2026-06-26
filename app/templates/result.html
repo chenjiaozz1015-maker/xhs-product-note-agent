@@ -8,19 +8,37 @@
   </head>
   <body>
     <main class="page result-page">
-      <section class="card">
-        <h2>生成结果</h2>
-        <a class="secondary-btn" href="/">返回重新生成</a>
+      <section class="card result-hero">
+        <div>
+          <h1>你的种草笔记已生成</h1>
+          <p>下载图片，复制文案，就可以去小红书发布。</p>
+        </div>
+        <div class="result-actions">
+          <a class="btn btn-ghost" href="/">返回重新生成</a>
+          <button class="btn btn-primary download-all-btn" type="button">下载全部图片</button>
+          <button class="btn btn-secondary copy-btn" type="button" data-copy-target="all">复制全部发布文案</button>
+        </div>
       </section>
 
-      <section class="card">
-        <h3>生成图片</h3>
+      <section class="card image-package">
+        <div class="section-heading">
+          <div>
+            <h2>图片素材包</h2>
+            <p>点击任意图片查看大图，如浏览器拦截多文件下载，请分别点击单张下载。</p>
+          </div>
+          <button class="btn btn-primary download-all-btn" type="button">下载全部图片</button>
+        </div>
         <div class="image-grid">
           {% for image_path in result.image_paths %}
-          <div class="image-card" data-title="海报预览 {{ loop.index }}" data-name="海报{{ loop.index }}">
-            <img src="{{ image_path }}" alt="生成图片" />
+          {% set image_title = "封面图" if loop.index == 1 else ("卖点/体验图" if loop.index == 2 else "总结推荐图") %}
+          <div class="image-card" data-title="{{ image_title }}" data-name="{{ image_title }}">
+            <div class="image-card-header">
+              <strong>{{ loop.index }}. {{ image_title }}</strong>
+              <span>点击查看大图</span>
+            </div>
+            <img src="{{ image_path }}" alt="{{ image_title }}" />
             <div class="image-actions">
-              <a href="{{ image_path }}" download>下载</a>
+              <a class="btn btn-download single-download" href="{{ image_path }}" download="{{ image_title }}.png">下载单张图片</a>
             </div>
           </div>
           {% endfor %}
@@ -52,36 +70,50 @@
         </div>
       </div>
 
-      <section class="card">
-        <h3>标题候选</h3>
-        <ul>
+      <section class="copy-pack">
+        <article class="card copy-card">
+          <div class="copy-card-header">
+            <h2>标题候选</h2>
+            <button class="btn btn-secondary copy-btn" type="button" data-copy-target="titles">复制全部标题</button>
+          </div>
+          <ol class="title-list" data-copy-source="titles">
           {% for title in result.note_titles %}
-          <li>{{ title }}</li>
+            <li>{{ title }}</li>
           {% endfor %}
-        </ul>
-        <button class="copy-btn" data-copy-target="titles">一键复制标题</button>
-      </section>
+          </ol>
+        </article>
 
-      <section class="card">
-        <h3>正文</h3>
-        <p>{{ result.note_body }}</p>
-        <button class="copy-btn" data-copy-target="body">一键复制正文</button>
-      </section>
+        <article class="card copy-card">
+          <div class="copy-card-header">
+            <h2>小红书正文</h2>
+            <button class="btn btn-secondary copy-btn" type="button" data-copy-target="body">复制正文</button>
+          </div>
+          <div class="copy-content note-body" data-copy-source="body">{{ result.note_body }}</div>
+        </article>
 
-      <section class="card">
-        <h3>标签</h3>
-        <p>{{ result.hashtags | join(' ') }}</p>
-        <button class="copy-btn" data-copy-target="hashtags">一键复制标签</button>
-      </section>
+        <article class="card copy-card">
+          <div class="copy-card-header">
+            <h2>标签</h2>
+            <button class="btn btn-secondary copy-btn" type="button" data-copy-target="hashtags">复制标签</button>
+          </div>
+          <div class="tag-list" data-copy-source="hashtags">
+            {% for tag in result.hashtags %}
+            <span>{{ tag }}</span>
+            {% endfor %}
+          </div>
+        </article>
 
-      <section class="card">
-        <h3>评论引导</h3>
-        <ul>
+        <article class="card copy-card">
+          <div class="copy-card-header">
+            <h2>评论引导</h2>
+            <button class="btn btn-secondary copy-btn" type="button" data-copy-target="comments">复制评论引导</button>
+          </div>
+          <div class="comment-list" data-copy-source="comments">
           {% for comment in result.comments %}
-          <li>{{ comment }}</li>
+            <p>{{ comment }}</p>
           {% endfor %}
-        </ul>
-        <button class="copy-btn" data-copy-target="all">一键复制全部文案</button>
+          </div>
+        </article>
       </section>
     </main>
     <script src="/static/js/app.js"></script>
