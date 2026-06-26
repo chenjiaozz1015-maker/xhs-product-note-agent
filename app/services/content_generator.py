@@ -15,23 +15,23 @@ CATEGORY_TEMPLATES = {
         ],
         "selling_points": [
             "早餐下午茶都能搭",
-            "拿取方便适合囤",
-            "口感顺不腻",
-            "办公室家里都能放",
+            "软乎口感更日常",
+            "适合家里囤一点",
+            "办公室家里都能吃",
             "分享给家人也自然",
         ],
         "focus": ["口感舒服", "日常方便", "早餐下午茶都合适"],
         "titles": ["适合日常囤的", "早餐下午茶都能吃的", "办公室也适合的", "最近回购的", "家里可以备一点的"],
         "hashtags": ["#食品分享", "#早餐推荐", "#下午茶", "#好物分享", "#日常囤货", "#办公室小零食", "#回购分享"],
         "suitable_for": "喜欢早餐和下午茶分享的人",
-        "recommend_reason": "口感顺、拿取方便、适合日常囤一点",
+        "recommend_reason": "口感软、早餐下午茶都能搭、适合日常囤一点",
         "comments": ["你平时会囤这类吃的吗？", "早餐还是下午茶，你更想怎么搭？", "还想看哪些日常食品分享？"],
         "body": [
-            "最近把{name}放进日常早餐和下午茶里，想吃点东西的时候拿起来很方便。",
-            "它比较打动我的地方是口感顺、场景不挑，放在家里或办公室都不突兀。偶尔分享给家人也比较自然，不像特意准备的复杂零食。",
-            "如果你也想找一款日常能囤一点的小点心，可以先从这种轻松场景试试。{detail}",
+            "最近早餐和下午茶会吃到{name}，想吃点软乎的小点心时拿一份很方便。",
+            "它更适合放在家里或办公室当日常补充，口感比较软，搭牛奶、咖啡或者茶都不突兀。家里人一起分着吃也比较自然，不会像特别甜腻的零食那样有负担。",
+            "如果你也想囤一点早餐、下午茶都能吃的小点心，可以先从这种日常场景试试。{detail}",
         ],
-        "summary_sentence": "{name}适合放进日常小场景里。",
+        "summary_sentence": "{name}适合早餐和下午茶场景。",
     },
     "美妆护肤": {
         "fallback": "这款小东西",
@@ -209,6 +209,51 @@ CATEGORY_TEMPLATES = {
     },
 }
 
+CATEGORY_ALIASES = {
+    "食品": "食品饮品",
+    "饮品": "食品饮品",
+    "零食": "食品饮品",
+    "美妆": "美妆护肤",
+    "护肤": "美妆护肤",
+    "家居": "家居日用",
+    "日用": "家居日用",
+    "母婴": "母婴儿童",
+    "儿童": "母婴儿童",
+    "宠物": "宠物用品",
+    "服饰": "服饰配件",
+    "配件": "服饰配件",
+}
+
+CATEGORY_KEYWORDS = {
+    "食品饮品": ["蛋糕", "早餐", "下午茶", "口感", "软", "零食", "饮品", "牛奶", "咖啡", "茶", "饼干", "面包"],
+    "美妆护肤": ["护手霜", "面霜", "精华", "口红", "粉底", "护肤", "肤感", "质地"],
+    "家居日用": ["收纳", "清洁", "家里", "厨房", "卫生间", "整理", "日用"],
+    "宠物用品": ["猫", "狗", "宠物", "毛孩子", "猫咪", "狗狗"],
+}
+
+STYLE_COPY = {
+    "清新简约": {
+        "cover_suffix": "真实分享",
+        "summary_pattern": "关于{name}，我想说这几点",
+    },
+    "可爱手账": {
+        "cover_suffix": "今日小分享",
+        "summary_pattern": "{name}的日常小发现",
+    },
+    "生活方式": {
+        "cover_suffix": "日常好物",
+        "summary_pattern": "{name}适合这些场景",
+    },
+    "干货清单": {
+        "cover_suffix": "这几点值得看",
+        "summary_pattern": "{name}的 3 个体验点",
+    },
+    "温柔日常": {
+        "cover_suffix": "温柔日常分享",
+        "summary_pattern": "慢慢用下来，{name}还不错",
+    },
+}
+
 
 def _safe_text(value: str, fallback: str) -> str:
     cleaned = "".join(ch for ch in value.strip() if ch not in ["\n", "\r", "\t"])
@@ -233,6 +278,23 @@ def _clip_unique(items: Iterable[str], max_len: int, limit: int | None = None) -
     return _unique((item[:max_len] for item in items), limit=limit)
 
 
+def _resolve_category(category: str, product_name: str, description: str) -> str:
+    category_text = (category or "").strip()
+    if category_text in CATEGORY_TEMPLATES and category_text != "其他好物":
+        return category_text
+
+    for keyword, category_value in CATEGORY_ALIASES.items():
+        if keyword in category_text:
+            return category_value
+
+    combined_text = f"{product_name} {description}"
+    for category_value, keywords in CATEGORY_KEYWORDS.items():
+        if any(keyword in combined_text for keyword in keywords):
+            return category_value
+
+    return "其他好物"
+
+
 def generate_note_payload(
     description: str,
     content_type: str,
@@ -240,12 +302,13 @@ def generate_note_payload(
     product_name: str = "",
     category: str = "其他好物",
 ) -> Dict[str, object]:
-    category_value = category if category in CATEGORY_TEMPLATES else "其他好物"
+    category_value = _resolve_category(category, product_name, description)
     template = CATEGORY_TEMPLATES[category_value]
     product_value = _safe_text(product_name, template.get("fallback", "这个好物"))
     description_value = _safe_text(description, "")
     content_type_value = _safe_text(content_type, "好物推荐")
     style_value = _safe_text(style, "清新简约")
+    style_copy = STYLE_COPY.get(style_value, STYLE_COPY["清新简约"])
 
     display_name = product_value[:12]
     detail_hint = f"补充一下我的使用感受：{description_value}" if description_value else ""
@@ -269,7 +332,7 @@ def generate_note_payload(
     selling_pool = template.get("selling_points", template["focus"])
     selling_points = _clip_unique(selling_pool, 20, limit=3)
 
-    cover_title = f"{display_name}，真实分享"
+    cover_title = f"{display_name}，{style_copy['cover_suffix']}"
     if len(cover_title) > 18:
         cover_title = cover_title[:18]
 
@@ -292,7 +355,7 @@ def generate_note_payload(
         "cover_title": cover_title,
         "cover_subtitle": cover_subtitle,
         "selling_points": selling_points,
-        "summary_title": f"关于{display_name}，我想说这几点"[:24],
+        "summary_title": style_copy["summary_pattern"].format(name=display_name)[:24],
         "suitable_for": template["suitable_for"],
         "recommend_reason": template["recommend_reason"],
         "summary_sentence": summary_sentence,

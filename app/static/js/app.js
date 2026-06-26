@@ -224,7 +224,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const lightbox = document.getElementById('lightbox');
   const lightboxImage = document.getElementById('lightbox-image');
-  const lightboxTitle = document.getElementById('lightbox-title');
   const lightboxDownload = document.getElementById('lightbox-download');
   const closeButton = document.querySelector('.lightbox-close');
 
@@ -249,9 +248,6 @@ document.addEventListener('DOMContentLoaded', () => {
       lightboxImage.alt = clickedImage.alt || '大图预览';
       lightboxImage.style.display = 'block';
 
-      if (lightboxTitle) {
-        lightboxTitle.textContent = card.dataset.title || '海报预览';
-      }
       if (lightboxDownload) {
         lightboxDownload.href = previewSrc;
         lightboxDownload.setAttribute('download', `${card.dataset.name || '种草机图片'}.png`);

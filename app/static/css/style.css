@@ -102,41 +102,23 @@ button:disabled { opacity: 0.72; cursor: wait; }
 }
 .lightbox-shell {
   position: relative;
-  width: min(92vw, 760px);
-  max-width: 92vw;
-  max-height: min(90vh, 920px);
-  background: #fff;
-  border-radius: 24px;
-  padding: 12px 12px 10px;
-  box-shadow: 0 20px 45px rgba(0,0,0,0.2);
+  width: auto;
+  max-width: 90vw;
+  max-height: 92vh;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
   display: flex;
   flex-direction: column;
-}
-.lightbox-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
-  padding: 4px 4px 10px;
-}
-.lightbox-eyebrow {
-  font-size: 0.74rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #ff6b6b;
-  font-weight: 700;
-}
-.lightbox-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #111827;
-  margin-top: 2px;
 }
 .lightbox-image-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
+  width: auto;
   min-height: 0;
 }
 .lightbox img {
@@ -144,48 +126,35 @@ button:disabled { opacity: 0.72; cursor: wait; }
   width: auto;
   height: auto;
   max-width: 90vw;
-  max-height: 85vh;
+  max-height: 86vh;
   object-fit: contain;
-  border-radius: 16px;
-  background: #fff;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.34);
 }
 .lightbox-toolbar {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  gap: 8px;
-  padding: 10px 4px 2px;
-  color: #6b7280;
-  font-size: 0.9rem;
-}
-.lightbox-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.lightbox-pill {
-  border: 1px solid #f3d4c1;
-  background: #fff8f3;
-  color: #7c4a2d;
-  border-radius: 999px;
-  padding: 7px 10px;
-  font-size: 0.86rem;
-  font-weight: 600;
-}
-.lightbox-meta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  padding: 0;
 }
 .lightbox-toolbar a {
-  color: #2f80ed;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: #fff;
+  color: #111827;
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 700;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.22);
 }
 .lightbox-close {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: -18px;
+  right: -18px;
   z-index: 2;
   width: 44px;
   height: 44px;

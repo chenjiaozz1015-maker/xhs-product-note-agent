@@ -74,6 +74,7 @@ async def generate(
             output_dir=str(GENERATED_DIR),
             title=str(result_payload["cover_title"]),
             subtitle=str(result_payload["cover_subtitle"]),
+            style=style,
             selling_points=list(result_payload["selling_points"]),
             summary_title=str(result_payload["summary_title"]),
             suitable_for=str(result_payload["suitable_for"]),

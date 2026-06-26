@@ -119,3 +119,19 @@ def test_pet_category_avoids_beauty_and_food_words():
 
     forbidden_words = ["上妆", "早餐", "面霜", "妆感", "护肤"]
     assert all(word not in joined for word in forbidden_words)
+
+
+def test_food_keywords_resolve_to_food_copy_even_when_category_is_generic():
+    payload = generate_note_payload(
+        product_name="水牛奶蛋糕",
+        category="其他好物",
+        description="早餐和下午茶都可以吃，口感比较软，适合家里囤一点",
+        content_type="好物推荐",
+        style="温柔日常",
+    )
+    joined = " ".join([payload["note_body"], *payload["selling_points"], payload["recommend_reason"], payload["summary_sentence"]])
+
+    assert payload["category"] == "食品饮品"
+    assert any(word in joined for word in ["早餐", "下午茶", "口感", "囤"])
+    forbidden_words = ["随手用", "随手放", "小物", "功能", "提升日常体验", "使用频率"]
+    assert all(word not in joined for word in forbidden_words)
