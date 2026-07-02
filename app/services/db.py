@@ -16,8 +16,8 @@ CREATE TABLE IF NOT EXISTS users (
     display_name TEXT,
     trial_status TEXT NOT NULL DEFAULT 'trial',
     plan TEXT NOT NULL DEFAULT 'trial',
-    monthly_quota INTEGER NOT NULL DEFAULT 10,
-    used_quota INTEGER NOT NULL DEFAULT 0,
+    monthly_quota INTEGER DEFAULT 10,
+    used_quota INTEGER DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_login_at TEXT
 )

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>{{ app_title }} - 额度已用完</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}" />
+  </head>
+  <body>
+    <main class="page quota-empty-page">
+      <section class="card quota-empty-card">
+        <p class="section-label">试用额度</p>
+        <h1>本月试用额度已用完</h1>
+        <p>你的免费试用账号本月可生成 10 次，目前额度已用完。可以查看套餐，后续将支持升级更多生成次数。</p>
+        <div class="quota-actions">
+          <a class="btn btn-primary" href="/pricing">查看套餐</a>
+          <a class="btn btn-ghost" href="/">返回首页</a>
+        </div>
+      </section>
+      <p class="version-note">种草机 {{ app_version }} 试用额度版</p>
+    </main>
+  </body>
+</html>

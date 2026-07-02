@@ -20,6 +20,18 @@
         </div>
       </section>
 
+      {% if quota %}
+      <section class="card quota-result-tip">
+        <div>
+          <strong>本次生成已使用 1 次额度</strong>
+          <span>本月剩余：{{ quota.remaining_quota }} 次</span>
+        </div>
+        {% if quota.remaining_quota <= 2 %}
+        <a class="btn btn-ghost" href="/pricing">额度不多了，可查看套餐升级</a>
+        {% endif %}
+      </section>
+      {% endif %}
+
       <section class="card regenerate-tip">
         <div>
           <h2>生成效果不满意？</h2>
@@ -159,7 +171,7 @@
         </ol>
       </section>
 
-      <p class="version-note">种草机 {{ app_version }} 账号基础版</p>
+      <p class="version-note">种草机 {{ app_version }} 试用额度版</p>
     </main>
     <script src="{{ url_for('static', path='js/app.js') }}"></script>
   </body>

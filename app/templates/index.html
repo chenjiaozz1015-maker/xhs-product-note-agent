@@ -13,6 +13,11 @@
         <div>
           <strong>你好，{{ current_user.display_name or current_user.email }}</strong>
           <span>当前套餐：试用账号</span>
+          {% if quota and quota.remaining_quota > 0 %}
+          <span class="quota-status">本月剩余：{{ quota.remaining_quota }} / {{ quota.monthly_quota }}</span>
+          {% else %}
+          <span class="quota-status quota-status-empty">本月试用额度已用完</span>
+          {% endif %}
         </div>
         <div class="account-actions">
           <a class="btn btn-ghost" href="/pricing">升级套餐</a>
@@ -121,6 +126,18 @@
         {% if warning %}
         <div class="form-message form-message-warning">{{ warning }}</div>
         {% endif %}
+        {% if current_user %}
+          {% if quota and quota.remaining_quota > 0 %}
+        <div class="quota-hint quota-hint-ok">本月还可生成 {{ quota.remaining_quota }} 次。</div>
+          {% else %}
+        <div class="quota-hint quota-hint-empty">
+          本月试用额度已用完，请升级套餐后继续使用。
+          <a class="btn btn-ghost" href="/pricing">查看套餐</a>
+        </div>
+          {% endif %}
+        {% else %}
+        <div class="quota-hint">登录后即可生成和下载素材。</div>
+        {% endif %}
         <div class="form-message" id="form-message" hidden></div>
 
         <div class="form-grid">
@@ -226,7 +243,7 @@
           <button class="btn btn-secondary copy-btn" type="button" data-copy-target="trial-feedback">复制反馈模板</button>
         </div>
       </section>
-      <p class="version-note">种草机 {{ app_version }} 账号基础版</p>
+      <p class="version-note">种草机 {{ app_version }} 试用额度版</p>
     </main>
     <script src="{{ url_for('static', path='js/app.js') }}"></script>
   </body>

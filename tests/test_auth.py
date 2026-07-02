@@ -5,7 +5,7 @@ from urllib.parse import urlencode
 from app.main import app
 from app.routes import pages
 from app.services import db
-from app.services.auth_service import get_user_by_email
+from app.services.auth_service import get_user_by_email, get_user_quota
 
 
 class Response:
@@ -272,6 +272,79 @@ def test_logged_in_generate_enters_existing_flow(monkeypatch):
     assert response.status_code == 200
     assert "标题一" in response.text
     assert "/static/generated/fake.png" in response.text
+    user = get_user_by_email("user@example.com")
+    assert user is not None
+    assert user["used_quota"] == 1
+
+
+def test_generate_with_exhausted_quota_is_blocked_and_not_incremented(monkeypatch):
+    client = _client(monkeypatch, "exhausted_quota")
+    _register(client)
+    user = get_user_by_email("user@example.com")
+    assert user is not None
+
+    with db.get_connection() as connection:
+        connection.execute(
+            "UPDATE users SET used_quota = 10 WHERE id = ?",
+            (user["id"],),
+        )
+        connection.commit()
+
+    called = {"generate_posters": False}
+
+    def _should_not_generate(*args, **kwargs):
+        called["generate_posters"] = True
+        return ["/static/generated/fake.png"]
+
+    monkeypatch.setattr(pages, "generate_posters", _should_not_generate)
+
+    response = client.post(
+        "/generate",
+        data={
+            "product_name": "娴嬭瘯鍟嗗搧",
+            "category": "鍏朵粬濂界墿",
+            "description": "鎻忚堪",
+            "content_type": "濂界墿鎺ㄨ崘",
+            "style": "娓呮柊绠€绾?",
+        },
+        files={"image": ("sample.png", b"fake", "image/png")},
+    )
+    updated_user = get_user_by_email("user@example.com")
+
+    assert response.status_code == 403
+    assert "本月试用额度已用完" in response.text
+    assert called["generate_posters"] is False
+    assert updated_user is not None
+    assert updated_user["used_quota"] == 10
+
+
+def test_home_displays_quota_for_logged_in_user(monkeypatch):
+    client = _client(monkeypatch, "home_quota")
+    _register(client)
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "本月剩余：10 / 10" in response.text
+    assert "本月还可生成 10 次" in response.text
+
+
+def test_quota_fallback_for_old_user_with_null_values(monkeypatch):
+    client = _client(monkeypatch, "quota_fallback")
+    _register(client)
+    user = get_user_by_email("user@example.com")
+    assert user is not None
+
+    with db.get_connection() as connection:
+        connection.execute(
+            "UPDATE users SET monthly_quota = NULL, used_quota = NULL WHERE id = ?",
+            (user["id"],),
+        )
+        connection.commit()
+
+    quota = get_user_quota(int(user["id"]))
+
+    assert quota == {"monthly_quota": 10, "used_quota": 0, "remaining_quota": 10}
 
 
 def test_pricing_page_is_public(monkeypatch):

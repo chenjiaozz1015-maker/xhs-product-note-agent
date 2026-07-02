@@ -123,3 +123,64 @@ def get_current_user(request: Request) -> dict[str, Any] | None:
     except (TypeError, ValueError):
         logout_user(request)
         return None
+
+
+def _coerce_quota_value(value: Any, default: int) -> int:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return default
+    return max(parsed, 0)
+
+
+def get_remaining_quota(user: dict[str, Any] | None) -> int:
+    if not user:
+        return 0
+    monthly_quota = _coerce_quota_value(user.get("monthly_quota"), 10)
+    used_quota = _coerce_quota_value(user.get("used_quota"), 0)
+    return max(monthly_quota - used_quota, 0)
+
+
+def get_user_quota(user_id: int) -> dict[str, int] | None:
+    user = get_user_by_id(user_id)
+    if not user:
+        return None
+    monthly_quota = _coerce_quota_value(user.get("monthly_quota"), 10)
+    used_quota = _coerce_quota_value(user.get("used_quota"), 0)
+    return {
+        "monthly_quota": monthly_quota,
+        "used_quota": used_quota,
+        "remaining_quota": max(monthly_quota - used_quota, 0),
+    }
+
+
+def has_remaining_quota(user_id: int) -> bool:
+    quota = get_user_quota(user_id)
+    return bool(quota and quota["remaining_quota"] > 0)
+
+
+def increment_used_quota(user_id: int) -> dict[str, int] | None:
+    user = get_user_by_id(user_id)
+    if not user:
+        return None
+
+    monthly_quota = _coerce_quota_value(user.get("monthly_quota"), 10)
+    used_quota = _coerce_quota_value(user.get("used_quota"), 0)
+    next_used_quota = min(used_quota + 1, monthly_quota)
+
+    with get_connection() as connection:
+        connection.execute(
+            """
+            UPDATE users
+            SET monthly_quota = ?, used_quota = ?
+            WHERE id = ?
+            """,
+            (monthly_quota, next_used_quota, user_id),
+        )
+        connection.commit()
+
+    return {
+        "monthly_quota": monthly_quota,
+        "used_quota": next_used_quota,
+        "remaining_quota": max(monthly_quota - next_used_quota, 0),
+    }

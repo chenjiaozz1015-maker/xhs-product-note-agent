@@ -5,7 +5,7 @@ from pathlib import Path
 import shutil
 
 from app.config import APP_TITLE, APP_VERSION, UPLOAD_DIR, GENERATED_DIR
-from app.services.auth_service import get_current_user
+from app.services.auth_service import get_current_user, get_user_quota, increment_used_quota
 from app.services.note_builder import build_result_payload
 from app.services.poster_engine_adapter import generate_posters
 
@@ -17,11 +17,13 @@ SUPPORTED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 
 def _index_context(request: Request, error: str = "", warning: str = "") -> dict:
     current_user = get_current_user(request)
+    quota = get_user_quota(int(current_user["id"])) if current_user else None
     return {
         "request": request,
         "app_title": APP_TITLE,
         "app_version": APP_VERSION,
         "current_user": current_user,
+        "quota": quota,
         "error": error,
         "warning": warning,
     }
@@ -42,8 +44,23 @@ async def generate(
     style: str = Form(...),
     image: UploadFile | None = File(None),
 ):
-    if not get_current_user(request):
+    current_user = get_current_user(request)
+    if not current_user:
         return RedirectResponse("/login?next=/&login_required=1", status_code=303)
+
+    quota = get_user_quota(int(current_user["id"]))
+    if not quota or quota["remaining_quota"] <= 0:
+        return templates.TemplateResponse(
+            "quota_empty.html",
+            {
+                "request": request,
+                "app_title": APP_TITLE,
+                "app_version": APP_VERSION,
+                "current_user": current_user,
+                "quota": quota,
+            },
+            status_code=403,
+        )
 
     if not image or not image.filename:
         return templates.TemplateResponse(
@@ -88,6 +105,7 @@ async def generate(
             summary_sentence=str(result_payload["summary_sentence"]),
         )
         result_payload["image_paths"] = poster_paths
+        quota = increment_used_quota(int(current_user["id"]))
         return templates.TemplateResponse(
             "result.html",
             {
@@ -95,6 +113,7 @@ async def generate(
                 "app_title": APP_TITLE,
                 "app_version": APP_VERSION,
                 "current_user": get_current_user(request),
+                "quota": quota,
                 "result": result_payload,
             },
         )

@@ -11,6 +11,7 @@ from app.services.auth_service import (
     authenticate_user,
     create_user,
     get_current_user,
+    get_user_quota,
     login_user,
     logout_user,
 )
@@ -20,11 +21,14 @@ templates = Jinja2Templates(directory=str(Path(__file__).resolve().parents[1] / 
 
 
 def _auth_context(request: Request, **extra: object) -> dict[str, object]:
+    current_user = get_current_user(request)
+    quota = get_user_quota(int(current_user["id"])) if current_user else None
     return {
         "request": request,
         "app_title": APP_TITLE,
         "app_version": APP_VERSION,
-        "current_user": get_current_user(request),
+        "current_user": current_user,
+        "quota": quota,
         **extra,
     }
 

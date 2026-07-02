@@ -12,7 +12,10 @@
         <div class="pricing-hero-copy">
           <p class="section-label">套餐入口预留</p>
           <h1>选择适合你的种草机套餐</h1>
-          <p>当前仅展示套餐和入口预留，不接入真实支付，不创建订单，也不做额度扣减。</p>
+          <p>当前仅展示套餐和入口预留，不接入真实支付，不创建订单，暂不做套餐升级生效。</p>
+          {% if current_user and quota %}
+          <p class="pricing-account-note">当前套餐：试用账号 · 剩余额度 {{ quota.remaining_quota }} 次</p>
+          {% endif %}
         </div>
         <div class="account-actions">
           <a class="btn btn-primary" href="/register">注册试用</a>
@@ -41,7 +44,7 @@
         </article>
         {% endfor %}
       </section>
-      <p class="version-note">种草机 {{ app_version }} 账号基础版</p>
+      <p class="version-note">种草机 {{ app_version }} 试用额度版</p>
     </main>
   </body>
 </html>
