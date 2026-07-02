@@ -15,6 +15,7 @@ from app.services.auth_service import (
     login_user,
     logout_user,
 )
+from app.services.record_service import list_user_generation_records
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parents[1] / "templates"))
@@ -121,6 +122,19 @@ async def login(
 async def logout(request: Request):
     logout_user(request)
     return RedirectResponse("/", status_code=303)
+
+
+@router.get("/me/records", response_class=HTMLResponse)
+async def my_records(request: Request):
+    current_user = get_current_user(request)
+    if not current_user:
+        return RedirectResponse("/login?next=/me/records&login_required=1", status_code=303)
+
+    records = list_user_generation_records(int(current_user["id"]), limit=30)
+    return templates.TemplateResponse(
+        "records.html",
+        _auth_context(request, records=records),
+    )
 
 
 @router.get("/pricing", response_class=HTMLResponse)

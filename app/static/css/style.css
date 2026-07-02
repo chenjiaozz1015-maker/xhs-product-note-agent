@@ -219,6 +219,66 @@ li { margin-bottom: 6px; }
   min-height: 36px;
   padding: 8px 12px;
 }
+.recent-records-card {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  background: linear-gradient(135deg, rgba(255, 248, 244, 0.96) 0%, rgba(255, 255, 255, 0.98) 100%);
+  border-color: #f0ddd4;
+}
+.compact-heading {
+  margin-bottom: 0;
+}
+.compact-heading .btn {
+  width: 100%;
+}
+.recent-record-list {
+  display: grid;
+  gap: 10px;
+}
+.record-item {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #f0ddd4;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+.record-item strong,
+.record-item span,
+.record-meta em {
+  display: block;
+}
+.record-item strong {
+  color: var(--home-ink);
+  font-size: 0.98rem;
+}
+.record-item span {
+  margin-top: 4px;
+  color: var(--home-text);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.record-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.record-meta em {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #fff0f4;
+  color: var(--home-brand-deep);
+  font-style: normal;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+.empty-records {
+  margin: 0;
+  color: var(--home-muted);
+  line-height: 1.6;
+}
 .version-note {
   margin: 0 0 8px;
   text-align: center;
@@ -1115,6 +1175,99 @@ button, .secondary-btn, .copy-btn, .btn {
   margin-top: 22px;
 }
 
+.records-page {
+  width: min(1120px, calc(100% - 24px));
+  max-width: 1120px;
+  gap: 18px;
+}
+
+.records-hero {
+  display: grid;
+  gap: 18px;
+  padding: 26px;
+  background: linear-gradient(135deg, #fff8f4 0%, #fff 100%);
+  border-color: #f0ddd4;
+}
+
+.records-hero h1 {
+  margin: 0 0 8px;
+  color: var(--home-ink);
+  font-size: 2rem;
+  line-height: 1.18;
+}
+
+.records-hero p {
+  margin: 0;
+  color: var(--home-text);
+  line-height: 1.7;
+}
+
+.records-quota {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 12px !important;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #fff0f4;
+  color: var(--home-brand-deep) !important;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.records-card {
+  overflow: hidden;
+}
+
+.records-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.records-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--home-text);
+  font-size: 0.92rem;
+}
+
+.records-table th,
+.records-table td {
+  padding: 13px 12px;
+  border-bottom: 1px solid #f0e2dc;
+  text-align: left;
+  vertical-align: top;
+}
+
+.records-table th {
+  color: var(--home-ink);
+  background: #fff8f4;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.records-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.records-empty {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  padding: 8px;
+}
+
+.records-empty h2 {
+  margin: 0;
+  color: var(--home-ink);
+  font-size: 1.15rem;
+}
+
+.records-empty p {
+  margin: 0;
+  color: var(--home-muted);
+  line-height: 1.6;
+}
+
 .pricing-page {
   width: min(1320px, calc(100% - 24px));
   max-width: 1320px;
@@ -1287,6 +1440,26 @@ button, .secondary-btn, .copy-btn, .btn {
     align-items: center;
   }
 
+  .compact-heading {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .compact-heading .btn {
+    width: auto;
+  }
+
+  .record-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .record-meta {
+    justify-content: flex-end;
+    text-align: right;
+  }
+
   .quota-result-tip {
     flex-direction: row;
     align-items: center;
@@ -1355,6 +1528,15 @@ button, .secondary-btn, .copy-btn, .btn {
   .pricing-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .records-page {
+    width: min(1120px, calc(100% - 64px));
+  }
+
+  .records-hero {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
 }
 
 @media (min-width: 1024px) {
@@ -1419,5 +1601,44 @@ button, .secondary-btn, .copy-btn, .btn {
     bottom: 6px;
     width: 2px;
     height: auto;
+  }
+
+  .records-table,
+  .records-table thead,
+  .records-table tbody,
+  .records-table tr,
+  .records-table th,
+  .records-table td {
+    display: block;
+  }
+
+  .records-table thead {
+    display: none;
+  }
+
+  .records-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .records-table tr {
+    padding: 12px;
+    border: 1px solid #f0ddd4;
+    border-radius: 8px;
+    background: #fffaf7;
+  }
+
+  .records-table td {
+    display: grid;
+    grid-template-columns: 86px minmax(0, 1fr);
+    gap: 10px;
+    padding: 7px 0;
+    border: 0;
+  }
+
+  .records-table td::before {
+    content: attr(data-label);
+    color: var(--home-muted);
+    font-weight: 700;
   }
 }

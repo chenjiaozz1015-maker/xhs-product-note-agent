@@ -20,6 +20,7 @@
           {% endif %}
         </div>
         <div class="account-actions">
+          <a class="btn btn-ghost" href="/me/records">我的记录</a>
           <a class="btn btn-ghost" href="/pricing">升级套餐</a>
           <form action="/logout" method="post">
             <button class="btn btn-secondary" type="submit">退出登录</button>
@@ -212,6 +213,36 @@
         </div>
       </form>
 
+      {% if current_user %}
+      <section class="card recent-records-card" aria-label="最近生成记录">
+        <div class="section-heading compact-heading">
+          <div>
+            <h2>最近生成记录</h2>
+            <p>保留最近 5 条生成摘要，方便你回看本月使用情况。</p>
+          </div>
+          <a class="btn btn-ghost" href="/me/records">查看全部</a>
+        </div>
+        {% if recent_records %}
+        <div class="recent-record-list">
+          {% for record in recent_records %}
+          <article class="record-item">
+            <div>
+              <strong>{{ record.product_name or "未填写商品名" }}</strong>
+              <span>{{ record.category }} · {{ record.content_type }} · {{ record.style }}</span>
+            </div>
+            <div class="record-meta">
+              <span>{{ record.created_at }}</span>
+              <em>消耗 {{ record.quota_cost }} 次额度</em>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty-records">暂无生成记录，上传一张商品图开始生成吧。</p>
+        {% endif %}
+      </section>
+      {% endif %}
+
       <section class="trial-card" aria-label="在线试用说明">
         <div class="info-panel">
           <div class="section-label">适合这些人</div>
@@ -243,7 +274,7 @@
           <button class="btn btn-secondary copy-btn" type="button" data-copy-target="trial-feedback">复制反馈模板</button>
         </div>
       </section>
-      <p class="version-note">种草机 {{ app_version }} 试用额度版</p>
+      <p class="version-note">种草机 {{ app_version }} 使用记录版</p>
     </main>
     <script src="{{ url_for('static', path='js/app.js') }}"></script>
   </body>

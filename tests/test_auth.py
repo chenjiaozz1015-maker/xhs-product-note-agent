@@ -6,6 +6,7 @@ from app.main import app
 from app.routes import pages
 from app.services import db
 from app.services.auth_service import get_user_by_email, get_user_quota
+from app.services.record_service import create_generation_record, list_recent_generation_records, list_user_generation_records
 
 
 class Response:
@@ -140,6 +141,21 @@ def _register(client: LocalClient, email: str = "user@example.com", password: st
     )
 
 
+def _record_count(user_id: int) -> int:
+    with db.get_connection() as connection:
+        row = connection.execute(
+            "SELECT COUNT(*) AS count FROM generation_records WHERE user_id = ?",
+            (user_id,),
+        ).fetchone()
+        return int(row["count"])
+
+
+def _all_record_count() -> int:
+    with db.get_connection() as connection:
+        row = connection.execute("SELECT COUNT(*) AS count FROM generation_records").fetchone()
+        return int(row["count"])
+
+
 def test_register_success_creates_trial_user(monkeypatch):
     client = _client(monkeypatch, "register_success")
 
@@ -222,6 +238,7 @@ def test_generate_requires_login(monkeypatch):
 
     assert response.status_code == 303
     assert response.headers["location"].startswith("/login")
+    assert _all_record_count() == 0
 
 
 def test_logged_in_generate_enters_existing_flow(monkeypatch):
@@ -275,6 +292,14 @@ def test_logged_in_generate_enters_existing_flow(monkeypatch):
     user = get_user_by_email("user@example.com")
     assert user is not None
     assert user["used_quota"] == 1
+    records = list_user_generation_records(int(user["id"]))
+    assert len(records) == 1
+    assert records[0]["product_name"] == "测试商品"
+    assert records[0]["category"] == "其他好物"
+    assert records[0]["content_type"] == "好物推荐"
+    assert records[0]["style"] == "清新简约"
+    assert records[0]["image_count"] == 3
+    assert records[0]["quota_cost"] == 1
 
 
 def test_generate_with_exhausted_quota_is_blocked_and_not_incremented(monkeypatch):
@@ -316,6 +341,72 @@ def test_generate_with_exhausted_quota_is_blocked_and_not_incremented(monkeypatc
     assert called["generate_posters"] is False
     assert updated_user is not None
     assert updated_user["used_quota"] == 10
+    assert _record_count(int(user["id"])) == 0
+
+
+def test_generate_form_error_does_not_create_record(monkeypatch):
+    client = _client(monkeypatch, "form_error_record")
+    _register(client)
+    user = get_user_by_email("user@example.com")
+    assert user is not None
+
+    response = client.post(
+        "/generate",
+        data={"content_type": "濂界墿鎺ㄨ崘", "style": "娓呮柊绠€绾?"},
+    )
+
+    assert response.status_code == 400
+    assert _record_count(int(user["id"])) == 0
+
+
+def test_generate_failure_does_not_create_record_or_deduct_quota(monkeypatch):
+    client = _client(monkeypatch, "generate_failure_record")
+    _register(client)
+    user = get_user_by_email("user@example.com")
+    assert user is not None
+
+    monkeypatch.setattr(
+        pages,
+        "build_result_payload",
+        lambda *args, **kwargs: {
+            "cover_title": "title",
+            "cover_subtitle": "subtitle",
+            "selling_points": [],
+            "summary_title": "summary",
+            "suitable_for": "people",
+            "recommend_reason": "reason",
+            "summary_sentence": "sentence",
+            "note_titles": ["title"],
+            "note_body": "body",
+            "hashtags": [],
+            "comments": [],
+            "product_name": "product",
+            "category": "category",
+        },
+    )
+
+    def _fail_generate(*args, **kwargs):
+        raise RuntimeError("poster failed")
+
+    monkeypatch.setattr(pages, "generate_posters", _fail_generate)
+
+    response = client.post(
+        "/generate",
+        data={
+            "product_name": "product",
+            "category": "category",
+            "description": "description",
+            "content_type": "type",
+            "style": "style",
+        },
+        files={"image": ("sample.png", b"fake", "image/png")},
+    )
+    updated_user = get_user_by_email("user@example.com")
+
+    assert response.status_code == 500
+    assert updated_user is not None
+    assert updated_user["used_quota"] == 0
+    assert _record_count(int(user["id"])) == 0
 
 
 def test_home_displays_quota_for_logged_in_user(monkeypatch):
@@ -327,6 +418,69 @@ def test_home_displays_quota_for_logged_in_user(monkeypatch):
     assert response.status_code == 200
     assert "本月剩余：10 / 10" in response.text
     assert "本月还可生成 10 次" in response.text
+
+
+def test_records_page_requires_login(monkeypatch):
+    client = _client(monkeypatch, "records_requires_login")
+
+    response = client.get("/me/records")
+
+    assert response.status_code == 303
+    assert response.headers["location"].startswith("/login")
+
+
+def test_records_page_for_logged_in_user_shows_empty_state(monkeypatch):
+    client = _client(monkeypatch, "records_empty")
+    _register(client)
+
+    response = client.get("/me/records")
+
+    assert response.status_code == 200
+    assert "records-empty" in response.text
+
+
+def test_home_shows_recent_records_for_logged_in_user(monkeypatch):
+    client = _client(monkeypatch, "home_recent_records")
+    _register(client)
+    user = get_user_by_email("user@example.com")
+    assert user is not None
+
+    create_generation_record(
+        user_id=int(user["id"]),
+        product_name="sample product",
+        category="sample category",
+        content_type="sample content",
+        style="sample style",
+    )
+
+    response = client.get("/")
+    records = list_recent_generation_records(int(user["id"]))
+
+    assert response.status_code == 200
+    assert len(records) == 1
+    assert "recent-records-card" in response.text
+    assert "sample product" in response.text
+
+
+def test_records_page_for_logged_in_user_lists_records(monkeypatch):
+    client = _client(monkeypatch, "records_list")
+    _register(client)
+    user = get_user_by_email("user@example.com")
+    assert user is not None
+
+    create_generation_record(
+        user_id=int(user["id"]),
+        product_name="listed product",
+        category="listed category",
+        content_type="listed content",
+        style="listed style",
+    )
+
+    response = client.get("/me/records")
+
+    assert response.status_code == 200
+    assert "listed product" in response.text
+    assert "listed category" in response.text
 
 
 def test_quota_fallback_for_old_user_with_null_values(monkeypatch):

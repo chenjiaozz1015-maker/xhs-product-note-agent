@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>{{ app_title }} - 我的生成记录</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}" />
+  </head>
+  <body>
+    <main class="page records-page">
+      <section class="card records-hero">
+        <div>
+          <p class="section-label">使用记录</p>
+          <h1>我的生成记录</h1>
+          <p>展示最近 30 条生成摘要，仅记录商品名、类目、内容类型、风格和额度消耗。</p>
+          {% if quota %}
+          <p class="records-quota">当前套餐：试用账号 · 本月剩余 {{ quota.remaining_quota }} 次</p>
+          {% endif %}
+        </div>
+        <div class="account-actions">
+          <a class="btn btn-primary" href="/">返回首页</a>
+          <a class="btn btn-ghost" href="/pricing">查看套餐</a>
+        </div>
+      </section>
+
+      <section class="card records-card">
+        {% if records %}
+        <div class="records-table-wrap">
+          <table class="records-table">
+            <thead>
+              <tr>
+                <th>时间</th>
+                <th>商品名称</th>
+                <th>类目</th>
+                <th>内容类型</th>
+                <th>风格</th>
+                <th>消耗额度</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for record in records %}
+              <tr>
+                <td data-label="时间">{{ record.created_at }}</td>
+                <td data-label="商品名称">{{ record.product_name or "未填写商品名" }}</td>
+                <td data-label="类目">{{ record.category }}</td>
+                <td data-label="内容类型">{{ record.content_type }}</td>
+                <td data-label="风格">{{ record.style }}</td>
+                <td data-label="消耗额度">消耗 {{ record.quota_cost }} 次</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="records-empty">
+          <h2>暂无生成记录</h2>
+          <p>上传一张商品图并成功生成后，这里会显示你的使用记录。</p>
+          <a class="btn btn-primary" href="/">开始生成</a>
+        </div>
+        {% endif %}
+      </section>
+
+      <p class="version-note">种草机 {{ app_version }} 使用记录版</p>
+    </main>
+  </body>
+</html>

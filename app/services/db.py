@@ -23,6 +23,21 @@ CREATE TABLE IF NOT EXISTS users (
 )
 """
 
+GENERATION_RECORDS_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS generation_records (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    product_name TEXT,
+    category TEXT,
+    content_type TEXT,
+    style TEXT,
+    image_count INTEGER NOT NULL DEFAULT 3,
+    quota_cost INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+)
+"""
+
 
 def get_connection(database_path: Path | str | None = None) -> sqlite3.Connection:
     selected_path = database_path if database_path is not None else DATABASE_PATH
@@ -44,4 +59,5 @@ def get_connection(database_path: Path | str | None = None) -> sqlite3.Connectio
 def init_db(database_path: Path | str | None = None) -> None:
     with get_connection(database_path) as connection:
         connection.execute(USER_TABLE_SQL)
+        connection.execute(GENERATION_RECORDS_TABLE_SQL)
         connection.commit()

@@ -8,6 +8,7 @@ from app.config import APP_TITLE, APP_VERSION, UPLOAD_DIR, GENERATED_DIR
 from app.services.auth_service import get_current_user, get_user_quota, increment_used_quota
 from app.services.note_builder import build_result_payload
 from app.services.poster_engine_adapter import generate_posters
+from app.services.record_service import create_generation_record, list_recent_generation_records
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parents[1] / "templates"))
@@ -18,12 +19,14 @@ SUPPORTED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 def _index_context(request: Request, error: str = "", warning: str = "") -> dict:
     current_user = get_current_user(request)
     quota = get_user_quota(int(current_user["id"])) if current_user else None
+    recent_records = list_recent_generation_records(int(current_user["id"])) if current_user else []
     return {
         "request": request,
         "app_title": APP_TITLE,
         "app_version": APP_VERSION,
         "current_user": current_user,
         "quota": quota,
+        "recent_records": recent_records,
         "error": error,
         "warning": warning,
     }
@@ -106,6 +109,15 @@ async def generate(
         )
         result_payload["image_paths"] = poster_paths
         quota = increment_used_quota(int(current_user["id"]))
+        create_generation_record(
+            user_id=int(current_user["id"]),
+            product_name=product_name,
+            category=category,
+            content_type=content_type,
+            style=style,
+            image_count=3,
+            quota_cost=1,
+        )
         return templates.TemplateResponse(
             "result.html",
             {
