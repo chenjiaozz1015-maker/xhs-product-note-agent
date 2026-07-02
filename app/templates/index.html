@@ -8,66 +8,72 @@
   </head>
   <body>
     <main class="page home-page">
-      <section class="hero card">
-        <h1>商品照片，一键变成小红书种草笔记</h1>
-        <p>上传一张商品照片，填写商品名称和类目，自动生成小红书风格图片素材包和发布文案。</p>
-      </section>
-
-      <section class="card trial-card" aria-label="在线试用说明">
-        <div class="trial-grid">
-          <div>
-            <h2>适合谁</h2>
-            <ul>
-              <li>小红书好物分享用户</li>
-              <li>小商家商品种草</li>
-              <li>初级内容创作者</li>
-              <li>食品、日用品、美妆、宠物用品等简单商品内容</li>
-              <li>想快速把普通商品照片变成图文素材的人</li>
-            </ul>
+      <section class="hero card home-hero">
+        <div class="hero-copy">
+          <p class="hero-kicker">在线试用版</p>
+          <h1>商品照片，一键变成小红书种草笔记</h1>
+          <p>上传一张商品照片，填写商品名称和类目，自动生成 3 张小红书风格图片和可复制发布文案。</p>
+          <div class="hero-tags" aria-label="功能亮点">
+            <span>3 张图片</span>
+            <span>标题正文标签</span>
+            <span>可编辑可复制</span>
+            <span>支持多种风格</span>
           </div>
-          <div>
-            <h2>当前限制</h2>
-            <ul>
-              <li>图片基于模板排版，不是 AI 重绘</li>
-              <li>文案基于规则模板，不是大模型生成</li>
-              <li>类目需要手动选择</li>
-              <li>免费部署环境首次打开可能会慢一点</li>
-              <li>暂不自动发布小红书</li>
-            </ul>
-          </div>
+          <a class="btn btn-primary hero-cta" href="#generate-form">开始生成</a>
         </div>
-        <p class="trial-note">当前可以生成封面图、卖点/体验图、总结推荐图，以及标题候选、正文、标签和评论引导。</p>
-      </section>
-
-      <section class="card feedback-card">
-        <div class="copy-card-header">
-          <div>
-            <h2>正在小范围试用中</h2>
-            <p>如果你愿意试用，欢迎生成一组商品图文后，把效果和建议反馈给我。你可以重点反馈：图片像不像小红书、文案是否贴合商品、哪里不好用、你希望增加什么功能。</p>
+        <div class="hero-preview result-preview" aria-label="生成结果示例">
+          <div class="result-preview-header">
+            <span>生成结果示例</span>
+            <strong>小红书素材包</strong>
           </div>
-          <button class="btn btn-secondary copy-btn" type="button" data-copy-target="trial-feedback">复制反馈模板</button>
+          <div class="preview-result-grid">
+            <div class="preview-poster preview-cover">
+              <div class="preview-product-placeholder">商品图</div>
+              <span>封面图</span>
+              <strong>今日好物分享</strong>
+            </div>
+            <div class="preview-side">
+              <div class="preview-mini">
+                <span>卖点图</span>
+                <strong>3 个体验点</strong>
+              </div>
+              <div class="preview-copy">
+                <span>发布文案</span>
+                <p>标题、正文、标签、评论引导一键复制</p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section class="card intro-card" aria-label="使用流程">
-        <div class="steps">
+      <form id="generate-form" class="card form-card" action="/generate" method="post" enctype="multipart/form-data">
+        <div class="form-card-heading">
+          <h2>开始生成你的种草素材</h2>
+          <p>填写越具体，生成内容越贴近商品。商品图会保持原样，不做 AI 重绘。</p>
+        </div>
+        <div class="steps compact-steps" aria-label="使用流程">
           <div class="step">
             <span>1</span>
-            <strong>上传商品照片</strong>
+            <div>
+              <strong>上传商品照片</strong>
+              <p>保持商品图原样</p>
+            </div>
           </div>
           <div class="step">
             <span>2</span>
-            <strong>选择内容风格</strong>
+            <div>
+              <strong>填写名称和类目</strong>
+              <p>让文案更贴合商品</p>
+            </div>
           </div>
           <div class="step">
             <span>3</span>
-            <strong>下载图片并复制文案</strong>
+            <div>
+              <strong>下载图片并复制文案</strong>
+              <p>可编辑后复制发布</p>
+            </div>
           </div>
         </div>
-        <p class="mvp-note">在线试用版会根据商品名称、类目和描述生成一组可发布素材。</p>
-      </section>
-
-      <form class="card form-card" action="/generate" method="post" enctype="multipart/form-data">
         {% if error %}
         <div class="form-message form-message-error">{{ error }}</div>
         {% endif %}
@@ -147,6 +153,38 @@
           </div>
         </div>
       </form>
+
+      <section class="trial-card" aria-label="在线试用说明">
+        <div class="info-panel">
+          <div class="section-label">适合这些人</div>
+          <div class="pill-grid">
+            <span>好物分享用户</span>
+            <span>小商家商品种草</span>
+            <span>初级内容创作者</span>
+            <span>食品 / 日用品 / 美妆 / 宠物用品</span>
+          </div>
+        </div>
+        <div class="info-panel muted-panel">
+          <div class="section-label">当前说明</div>
+          <div class="pill-grid">
+            <span>模板排版，不是 AI 重绘</span>
+            <span>规则文案，不是大模型</span>
+            <span>类目需要手动选择</span>
+            <span>免费环境首次打开可能较慢</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="feedback-card home-feedback">
+        <div>
+          <p class="section-label">试用反馈</p>
+          <h2>正在小范围试用中</h2>
+          <p>生成一组商品图文后，欢迎把效果和建议反馈给我。重点看图片像不像小红书、文案是否贴合商品、哪里不好用。</p>
+        </div>
+        <div class="feedback-action">
+          <button class="btn btn-secondary copy-btn" type="button" data-copy-target="trial-feedback">复制反馈模板</button>
+        </div>
+      </section>
       <p class="version-note">种草机 {{ app_version }} 在线试用版</p>
     </main>
     <script src="{{ url_for('static', path='js/app.js') }}"></script>
