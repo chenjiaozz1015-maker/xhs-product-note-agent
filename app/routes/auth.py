@@ -126,7 +126,7 @@ async def pricing(request: Request):
             "name": "免费试用",
             "price": "0 元",
             "badge": "适合试用",
-            "features": ["每月 10 次生成", "可体验图片素材包和发布文案", "适合初次试用"],
+            "features": ["每月 10 次生成", "可体验图片素材和发布文案", "适合初次试用"],
             "button": "注册试用",
             "href": "/register",
             "enabled": True,
@@ -142,7 +142,7 @@ async def pricing(request: Request):
         },
         {
             "name": "商家月卡",
-            "price": "49.9 元 / 月",
+            "price": "29.9 元 / 月",
             "badge": "",
             "features": ["每月 500 次生成", "适合小商家、团购、微商", "后续可扩展批量生成"],
             "button": "暂未开放支付",
@@ -151,7 +151,7 @@ async def pricing(request: Request):
         },
         {
             "name": "次数包",
-            "price": "19.9 元 / 100 次",
+            "price": "9.9 元 / 100 次",
             "badge": "",
             "features": ["不想包月时可购买次数", "次数长期有效规则后续确定"],
             "button": "暂未开放支付",

@@ -8,20 +8,15 @@
   </head>
   <body>
     <main class="page pricing-page">
-      <section class="pricing-hero">
-        <div>
-          <a class="auth-back" href="/">返回首页</a>
+      <section class="pricing-hero card">
+        <div class="pricing-hero-copy">
           <p class="section-label">套餐入口预留</p>
           <h1>选择适合你的种草机套餐</h1>
           <p>当前仅展示套餐和入口预留，不接入真实支付，不创建订单，也不做额度扣减。</p>
         </div>
         <div class="account-actions">
-          {% if current_user %}
-          <a class="btn btn-primary" href="/">回到生成工具</a>
-          {% else %}
           <a class="btn btn-primary" href="/register">注册试用</a>
-          <a class="btn btn-ghost" href="/login">登录</a>
-          {% endif %}
+          <a class="btn btn-ghost" href="/">返回首页</a>
         </div>
       </section>
 
