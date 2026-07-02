@@ -3,6 +3,10 @@
 .venv/
 venv/
 .env
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+!data/.gitkeep
 
 app/static/uploads/*
 !app/static/uploads/.gitkeep

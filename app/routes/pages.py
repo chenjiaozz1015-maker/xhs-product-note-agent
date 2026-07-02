@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Request, Form, UploadFile, File
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 import shutil
 
 from app.config import APP_TITLE, APP_VERSION, UPLOAD_DIR, GENERATED_DIR
+from app.services.auth_service import get_current_user
 from app.services.note_builder import build_result_payload
 from app.services.poster_engine_adapter import generate_posters
 
@@ -15,10 +16,12 @@ SUPPORTED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 
 
 def _index_context(request: Request, error: str = "", warning: str = "") -> dict:
+    current_user = get_current_user(request)
     return {
         "request": request,
         "app_title": APP_TITLE,
         "app_version": APP_VERSION,
+        "current_user": current_user,
         "error": error,
         "warning": warning,
     }
@@ -39,6 +42,9 @@ async def generate(
     style: str = Form(...),
     image: UploadFile | None = File(None),
 ):
+    if not get_current_user(request):
+        return RedirectResponse("/login?next=/&login_required=1", status_code=303)
+
     if not image or not image.filename:
         return templates.TemplateResponse(
             "index.html",
@@ -88,6 +94,7 @@ async def generate(
                 "request": request,
                 "app_title": APP_TITLE,
                 "app_version": APP_VERSION,
+                "current_user": get_current_user(request),
                 "result": result_payload,
             },
         )

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>{{ app_title }} - 注册</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}" />
+  </head>
+  <body>
+    <main class="page auth-page">
+      <section class="card auth-card">
+        <a class="auth-back" href="/">返回首页</a>
+        <div class="auth-heading">
+          <p class="section-label">免费试用账号</p>
+          <h1>注册后自动开通试用账号</h1>
+          <p>注册后自动开通免费试用账号，每月 10 次生成额度。当前版本暂不限制次数，额度功能后续开放。</p>
+        </div>
+
+        {% if error %}
+        <div class="form-message form-message-error">{{ error }}</div>
+        {% endif %}
+
+        <form class="auth-form" action="/register" method="post">
+          <input type="hidden" name="next" value="/" />
+          <label class="field">
+            <span>邮箱</span>
+            <input name="email" type="email" value="{{ email or '' }}" required />
+          </label>
+          <label class="field">
+            <span>昵称</span>
+            <input name="display_name" type="text" value="{{ display_name or '' }}" />
+          </label>
+          <label class="field">
+            <span>密码</span>
+            <input name="password" type="password" minlength="6" required />
+          </label>
+          <label class="field">
+            <span>确认密码</span>
+            <input name="confirm_password" type="password" minlength="6" required />
+          </label>
+          <button class="btn btn-primary" type="submit">注册并开通试用</button>
+        </form>
+
+        <p class="auth-switch">已有账号？<a href="/login">去登录</a></p>
+      </section>
+      <p class="version-note">种草机 {{ app_version }} 账号基础版</p>
+    </main>
+  </body>
+</html>

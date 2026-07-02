@@ -8,6 +8,31 @@
   </head>
   <body>
     <main class="page home-page">
+      <section class="account-bar" aria-label="账号状态">
+        {% if current_user %}
+        <div>
+          <strong>你好，{{ current_user.display_name or current_user.email }}</strong>
+          <span>当前套餐：试用账号</span>
+        </div>
+        <div class="account-actions">
+          <a class="btn btn-ghost" href="/pricing">升级套餐</a>
+          <form action="/logout" method="post">
+            <button class="btn btn-secondary" type="submit">退出登录</button>
+          </form>
+        </div>
+        {% else %}
+        <div>
+          <strong>登录后即可生成和下载素材</strong>
+          <span>注册后自动开通免费试用账号，每月 10 次额度。</span>
+        </div>
+        <div class="account-actions">
+          <a class="btn btn-ghost" href="/login">登录</a>
+          <a class="btn btn-primary" href="/register">注册</a>
+          <a class="btn btn-secondary" href="/pricing">套餐</a>
+        </div>
+        {% endif %}
+      </section>
+
       <section class="hero card home-hero">
         <div class="hero-copy">
           <p class="hero-kicker">在线试用版</p>
@@ -21,25 +46,41 @@
           </div>
           <a class="btn btn-primary hero-cta" href="#generate-form">开始生成</a>
         </div>
-        <div class="hero-preview result-preview" aria-label="生成结果示例">
+        <div class="hero-preview result-preview" aria-label="生成结果说明">
           <div class="result-preview-header">
-            <span>生成结果示例</span>
+            <span>生成后你会得到</span>
             <strong>小红书素材包</strong>
           </div>
-          <div class="preview-result-grid">
-            <div class="preview-poster preview-cover">
-              <div class="preview-product-placeholder">商品图</div>
-              <span>封面图</span>
-              <strong>今日好物分享</strong>
-            </div>
-            <div class="preview-side">
-              <div class="preview-mini">
-                <span>卖点图</span>
-                <strong>3 个体验点</strong>
+          <p class="result-preview-lead">图片 + 文案一次生成，适合直接编辑后发布</p>
+          <div class="output-summary-list">
+            <div class="output-summary-card">
+              <span class="output-index">1</span>
+              <div>
+                <div class="output-summary-title">
+                  <strong>图片素材</strong>
+                  <span class="output-badge">3 张图片</span>
+                </div>
+                <p>自动生成 3 张小红书风格图片</p>
               </div>
-              <div class="preview-copy">
-                <span>发布文案</span>
-                <p>标题、正文、标签、评论引导一键复制</p>
+            </div>
+            <div class="output-summary-card">
+              <span class="output-index">2</span>
+              <div>
+                <div class="output-summary-title">
+                  <strong>发布文案</strong>
+                  <span class="output-badge">整套文案</span>
+                </div>
+                <p>标题、正文、标签、评论引导一并生成</p>
+              </div>
+            </div>
+            <div class="output-summary-card">
+              <span class="output-index">3</span>
+              <div>
+                <div class="output-summary-title">
+                  <strong>可编辑可复制</strong>
+                  <span class="output-badge">编辑复制</span>
+                </div>
+                <p>生成后可修改，再复制发布</p>
               </div>
             </div>
           </div>
@@ -185,7 +226,7 @@
           <button class="btn btn-secondary copy-btn" type="button" data-copy-target="trial-feedback">复制反馈模板</button>
         </div>
       </section>
-      <p class="version-note">种草机 {{ app_version }} 在线试用版</p>
+      <p class="version-note">种草机 {{ app_version }} 账号基础版</p>
     </main>
     <script src="{{ url_for('static', path='js/app.js') }}"></script>
   </body>

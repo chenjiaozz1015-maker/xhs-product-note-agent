@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>{{ app_title }} - 套餐</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}" />
+  </head>
+  <body>
+    <main class="page pricing-page">
+      <section class="pricing-hero">
+        <div>
+          <a class="auth-back" href="/">返回首页</a>
+          <p class="section-label">套餐入口预留</p>
+          <h1>选择适合你的种草机套餐</h1>
+          <p>当前仅展示套餐和入口预留，不接入真实支付，不创建订单，也不做额度扣减。</p>
+        </div>
+        <div class="account-actions">
+          {% if current_user %}
+          <a class="btn btn-primary" href="/">回到生成工具</a>
+          {% else %}
+          <a class="btn btn-primary" href="/register">注册试用</a>
+          <a class="btn btn-ghost" href="/login">登录</a>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="pricing-grid" aria-label="套餐列表">
+        {% for plan in plans %}
+        <article class="card pricing-card{% if plan.badge == '推荐' %} featured{% endif %}">
+          {% if plan.badge %}
+          <span class="plan-badge">{{ plan.badge }}</span>
+          {% endif %}
+          <h2>{{ plan.name }}</h2>
+          <p class="plan-price">{{ plan.price }}</p>
+          <ul>
+            {% for feature in plan.features %}
+            <li>{{ feature }}</li>
+            {% endfor %}
+          </ul>
+          {% if plan.enabled %}
+          <a class="btn btn-primary" href="{{ plan.href }}">{{ plan.button }}</a>
+          {% else %}
+          <button class="btn btn-ghost" type="button" disabled>{{ plan.button }}</button>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </section>
+      <p class="version-note">种草机 {{ app_version }} 账号基础版</p>
+    </main>
+  </body>
+</html>
