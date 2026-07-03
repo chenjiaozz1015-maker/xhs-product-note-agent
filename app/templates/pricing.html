@@ -14,7 +14,7 @@
           <h1>选择适合你的种草机套餐</h1>
           <p>当前仅展示套餐和入口预留，不接入真实支付，不创建订单，暂不做套餐升级生效。</p>
           {% if current_user and quota %}
-          <p class="pricing-account-note">当前套餐：试用账号 · 本月剩余 {{ quota.remaining_quota }} / {{ quota.monthly_quota }} · 下次重置 {{ quota.quota_reset_date }}</p>
+          <p class="pricing-account-note">当前套餐：{{ current_plan.short_name }} · 本月剩余 {{ quota.remaining_quota }} / {{ quota.monthly_quota }} · 下次重置 {{ quota.quota_reset_date }}</p>
           {% endif %}
         </div>
         <div class="account-actions">
@@ -29,24 +29,26 @@
           {% if plan.badge %}
           <span class="plan-badge">{{ plan.badge }}</span>
           {% endif %}
-          <h2>{{ plan.name }}</h2>
-          <p class="plan-price">{{ plan.price }}</p>
+          <h2>{{ plan.display_name }}</h2>
+          <p class="plan-price">{{ plan.price_label }}</p>
           <ul>
             {% for feature in plan.features %}
             <li>{{ feature }}</li>
             {% endfor %}
           </ul>
-          {% if current_user and loop.index == 1 %}
-          <button class="btn btn-ghost" type="button" disabled>当前试用账号</button>
-          {% elif plan.enabled %}
-          <a class="btn btn-primary" href="{{ plan.href }}">{{ plan.button }}</a>
+          {% if current_user and current_user.plan == plan.code %}
+          <button class="btn btn-ghost" type="button" disabled>{{ plan.button_label.current if plan.button_label is mapping else "当前套餐" }}</button>
+          {% elif plan.payment_enabled or plan.code == "custom" %}
+          <a class="btn btn-primary" href="{{ plan.href }}">{{ plan.button_label if plan.button_label is string else plan.button_label.anonymous }}</a>
+          {% elif not current_user and plan.code == "trial" %}
+          <a class="btn btn-primary" href="{{ plan.href }}">{{ plan.button_label.anonymous }}</a>
           {% else %}
-          <button class="btn btn-ghost" type="button" disabled>{{ plan.button }}</button>
+          <button class="btn btn-ghost" type="button" disabled>{{ plan.button_label if plan.button_label is string else plan.button_label.disabled }}</button>
           {% endif %}
         </article>
         {% endfor %}
       </section>
-      <p class="version-note">种草机 {{ app_version }} 月度额度版</p>
+      <p class="version-note">种草机 {{ app_version }} 套餐配置版</p>
     </main>
   </body>
 </html>

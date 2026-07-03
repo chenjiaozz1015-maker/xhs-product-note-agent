@@ -7,6 +7,13 @@ from app.main import app
 from app.routes import pages
 from app.services import db
 from app.services.auth_service import get_user_by_email, get_user_quota
+from app.services.plan_service import (
+    get_default_trial_plan,
+    get_plan_config,
+    get_plan_period_days,
+    get_plan_quota,
+    list_public_plans,
+)
 from app.services.record_service import create_generation_record, list_recent_generation_records, list_user_generation_records
 
 
@@ -171,6 +178,21 @@ def _set_user_quota(user_id: int, used_quota: int, quota_reset_at: str | None) -
         connection.commit()
 
 
+def test_plan_service_public_plans_and_quota_rules():
+    plans = list_public_plans()
+    codes = [plan["code"] for plan in plans]
+
+    assert codes == ["trial", "personal", "business", "credits_100", "custom"]
+    assert get_plan_quota("trial") == 10
+    assert get_plan_period_days("trial") == 30
+    assert get_plan_quota("personal") == 100
+    assert get_plan_period_days("personal") == 30
+    assert get_plan_quota("business") == 500
+    assert get_plan_period_days("business") == 30
+    assert get_default_trial_plan()["display_name"] == "免费试用"
+    assert get_plan_config("trial")["short_name"] == "试用账号"
+
+
 def test_register_success_creates_trial_user(monkeypatch):
     client = _client(monkeypatch, "register_success")
 
@@ -185,10 +207,12 @@ def test_register_success_creates_trial_user(monkeypatch):
     assert user["password_hash"].startswith("pbkdf2_sha256$")
     assert user["plan"] == "trial"
     assert user["trial_status"] == "trial"
-    assert user["monthly_quota"] == 10
+    assert user["monthly_quota"] == get_default_trial_plan()["quota"]
     assert user["used_quota"] == 0
     assert user["quota_reset_at"]
-    assert datetime.fromisoformat(str(user["quota_reset_at"]).replace("Z", "+00:00")) > datetime.now(timezone.utc)
+    quota_reset_at = datetime.fromisoformat(str(user["quota_reset_at"]).replace("Z", "+00:00"))
+    assert quota_reset_at > datetime.now(timezone.utc)
+    assert quota_reset_at <= datetime.now(timezone.utc) + timedelta(days=get_default_trial_plan()["period_days"], minutes=1)
 
 
 def test_duplicate_email_register_fails(monkeypatch):
@@ -525,6 +549,7 @@ def test_home_displays_quota_for_logged_in_user(monkeypatch):
     assert response.status_code == 200
     assert "本月剩余：10 / 10" in response.text
     assert "本月还可生成 10 次" in response.text
+    assert get_plan_config("trial")["short_name"] in response.text
     assert quota["quota_reset_date"] in response.text
 
 
@@ -613,9 +638,9 @@ def test_quota_fallback_for_old_user_with_null_values(monkeypatch):
     quota = get_user_quota(int(user["id"]))
 
     assert quota is not None
-    assert quota["monthly_quota"] == 10
+    assert quota["monthly_quota"] == get_default_trial_plan()["quota"]
     assert quota["used_quota"] == 0
-    assert quota["remaining_quota"] == 10
+    assert quota["remaining_quota"] == get_default_trial_plan()["quota"]
     assert quota["quota_reset_at"]
     assert quota["quota_reset_date"]
 
@@ -632,6 +657,7 @@ def test_pricing_page_shows_logged_in_quota(monkeypatch):
 
     assert response.status_code == 200
     assert quota["quota_reset_date"] in response.text
+    assert get_plan_config("trial")["short_name"] in response.text
     assert "当前试用账号" in response.text
 
 
@@ -641,6 +667,8 @@ def test_pricing_page_is_public(monkeypatch):
     response = client.get("/pricing")
 
     assert response.status_code == 200
-    assert "免费试用" in response.text
-    assert "个人月卡" in response.text
-    assert "商家月卡" in response.text
+    assert response.text.count("pricing-card") == 5
+    for plan in list_public_plans():
+        assert plan["display_name"] in response.text
+        assert plan["price_label"] in response.text
+    assert "注册试用" in response.text

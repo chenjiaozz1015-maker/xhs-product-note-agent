@@ -14,7 +14,7 @@
           <h1>我的生成记录</h1>
           <p>展示最近 30 条生成摘要，仅记录商品名、类目、内容类型、风格和额度消耗。</p>
           {% if quota %}
-          <p class="records-quota">当前套餐：试用账号 · 下次重置 {{ quota.quota_reset_date }}</p>
+          <p class="records-quota">当前套餐：{{ current_plan.short_name }} · 下次重置 {{ quota.quota_reset_date }}</p>
           {% endif %}
         </div>
         <div class="account-actions">
@@ -81,7 +81,7 @@
         {% endif %}
       </section>
 
-      <p class="version-note">种草机 {{ app_version }} 月度额度版</p>
+      <p class="version-note">种草机 {{ app_version }} 套餐配置版</p>
     </main>
   </body>
 </html>

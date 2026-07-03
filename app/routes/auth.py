@@ -15,6 +15,7 @@ from app.services.auth_service import (
     login_user,
     logout_user,
 )
+from app.services.plan_service import get_default_trial_plan, get_plan_config, list_public_plans
 from app.services.record_service import list_user_generation_records
 
 router = APIRouter()
@@ -24,11 +25,14 @@ templates = Jinja2Templates(directory=str(Path(__file__).resolve().parents[1] / 
 def _auth_context(request: Request, **extra: object) -> dict[str, object]:
     current_user = get_current_user(request)
     quota = get_user_quota(int(current_user["id"])) if current_user else None
+    current_plan = get_plan_config(str(current_user.get("plan"))) if current_user else None
     return {
         "request": request,
         "app_title": APP_TITLE,
         "app_version": APP_VERSION,
         "current_user": current_user,
+        "current_plan": current_plan,
+        "trial_plan": get_default_trial_plan(),
         "quota": quota,
         **extra,
     }
@@ -139,51 +143,5 @@ async def my_records(request: Request):
 
 @router.get("/pricing", response_class=HTMLResponse)
 async def pricing(request: Request):
-    plans = [
-        {
-            "name": "免费试用",
-            "price": "0 元",
-            "badge": "适合试用",
-            "features": ["每月 10 次生成", "可体验图片素材和发布文案", "适合初次试用"],
-            "button": "注册试用",
-            "href": "/register",
-            "enabled": True,
-        },
-        {
-            "name": "个人月卡",
-            "price": "9.9 元 / 月",
-            "badge": "推荐",
-            "features": ["每月 100 次生成", "支持标题、正文、标签编辑", "适合好物分享用户"],
-            "button": "暂未开放支付",
-            "href": "#",
-            "enabled": False,
-        },
-        {
-            "name": "商家月卡",
-            "price": "29.9 元 / 月",
-            "badge": "",
-            "features": ["每月 500 次生成", "适合小商家、团购、微商", "后续可扩展批量生成"],
-            "button": "暂未开放支付",
-            "href": "#",
-            "enabled": False,
-        },
-        {
-            "name": "次数包",
-            "price": "9.9 元 / 100 次",
-            "badge": "",
-            "features": ["不想包月时可购买次数", "次数长期有效规则后续确定"],
-            "button": "暂未开放支付",
-            "href": "#",
-            "enabled": False,
-        },
-        {
-            "name": "定制版 / 私有部署",
-            "price": "联系开通",
-            "badge": "",
-            "features": ["私有部署", "自定义模板", "批量商品生成", "企业内使用"],
-            "button": "联系开通",
-            "href": "mailto:hello@example.com",
-            "enabled": True,
-        },
-    ]
+    plans = list_public_plans()
     return templates.TemplateResponse("pricing.html", _auth_context(request, plans=plans))

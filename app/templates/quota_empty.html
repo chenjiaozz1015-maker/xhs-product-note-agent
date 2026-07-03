@@ -11,13 +11,13 @@
       <section class="card quota-empty-card">
         <p class="section-label">试用额度</p>
         <h1>本月试用额度已用完</h1>
-        <p>你的免费试用账号本轮可生成 {{ quota.monthly_quota if quota else 10 }} 次，目前额度已用完。额度将在 {{ quota.quota_reset_date if quota else "下个周期" }} 自动重置。</p>
+        <p>你的免费试用账号本轮可生成 {{ quota.monthly_quota if quota else trial_plan.quota }} 次，目前额度已用完。额度将在 {{ quota.quota_reset_date if quota else "下个周期" }} 自动重置。</p>
         <div class="quota-actions">
           <a class="btn btn-primary" href="/pricing">查看套餐</a>
           <a class="btn btn-ghost" href="/">返回首页</a>
         </div>
       </section>
-      <p class="version-note">种草机 {{ app_version }} 月度额度版</p>
+      <p class="version-note">种草机 {{ app_version }} 套餐配置版</p>
     </main>
   </body>
 </html>

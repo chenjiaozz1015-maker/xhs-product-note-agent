@@ -13,7 +13,7 @@
         <div class="auth-heading">
           <p class="section-label">免费试用账号</p>
           <h1>注册后自动开通试用账号</h1>
-          <p>注册后自动开通免费试用账号，每月 10 次生成额度。当前版本暂不限制次数，额度功能后续开放。</p>
+          <p>注册后自动开通免费试用账号，每 {{ trial_plan.period_days }} 天 {{ trial_plan.quota }} 次生成额度。</p>
         </div>
 
         {% if error %}
@@ -43,7 +43,7 @@
 
         <p class="auth-switch">已有账号？<a href="/login">去登录</a></p>
       </section>
-      <p class="version-note">种草机 {{ app_version }} 月度额度版</p>
+      <p class="version-note">种草机 {{ app_version }} 套餐配置版</p>
     </main>
   </body>
 </html>

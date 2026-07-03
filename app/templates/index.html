@@ -12,7 +12,7 @@
         {% if current_user %}
         <div>
           <strong>你好，{{ current_user.display_name or current_user.email }}</strong>
-          <span>当前套餐：试用账号</span>
+          <span>当前套餐：{{ current_plan.short_name }}</span>
           {% if quota and quota.remaining_quota > 0 %}
           <span class="quota-status">本月剩余：{{ quota.remaining_quota }} / {{ quota.monthly_quota }}</span>
           <span>下次重置：{{ quota.quota_reset_date }}</span>
@@ -33,7 +33,7 @@
         {% else %}
         <div>
           <strong>登录后即可生成和下载素材</strong>
-          <span>注册后自动开通免费试用账号，每月 10 次额度。</span>
+          <span>注册后自动开通免费试用账号，每 {{ trial_plan.period_days }} 天 {{ trial_plan.quota }} 次额度。</span>
         </div>
         <div class="account-actions">
           <a class="btn btn-ghost" href="/login">登录</a>
@@ -278,7 +278,7 @@
           <button class="btn btn-secondary copy-btn" type="button" data-copy-target="trial-feedback">复制反馈模板</button>
         </div>
       </section>
-      <p class="version-note">种草机 {{ app_version }} 月度额度版</p>
+      <p class="version-note">种草机 {{ app_version }} 套餐配置版</p>
     </main>
     <script src="{{ url_for('static', path='js/app.js') }}"></script>
   </body>

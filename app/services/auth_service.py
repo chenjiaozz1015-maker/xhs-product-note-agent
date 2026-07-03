@@ -10,10 +10,15 @@ from typing import Any
 from fastapi import Request
 
 from app.services.db import get_connection, init_db
+from app.services.plan_service import (
+    DEFAULT_PLAN_CODE,
+    get_default_trial_plan,
+    get_plan_period_days,
+    get_plan_quota,
+)
 
 PBKDF2_ALGORITHM = "sha256"
 PBKDF2_ITERATIONS = 260_000
-QUOTA_PERIOD_DAYS = 30
 
 
 def _utc_now() -> datetime:
@@ -37,8 +42,10 @@ def _parse_quota_reset_at(value: Any) -> datetime | None:
         return None
 
 
-def _next_quota_reset_at(now: datetime | None = None) -> datetime:
-    return (now or _utc_now()) + timedelta(days=QUOTA_PERIOD_DAYS)
+def _next_quota_reset_at(now: datetime | None = None, period_days: int | None = None) -> datetime:
+    trial_plan = get_default_trial_plan()
+    resolved_period_days = period_days or int(trial_plan["period_days"])
+    return (now or _utc_now()) + timedelta(days=resolved_period_days)
 
 
 def _quota_reset_date(value: str) -> str:
@@ -85,7 +92,10 @@ def _row_to_user(row: sqlite3.Row | None) -> dict[str, Any] | None:
 def create_user(email: str, password: str, display_name: str = "") -> dict[str, Any]:
     init_db()
     normalized_email = normalize_email(email)
-    quota_reset_at = _format_quota_reset_at(_next_quota_reset_at())
+    trial_plan = get_default_trial_plan()
+    monthly_quota = int(trial_plan["quota"])
+    period_days = int(trial_plan["period_days"])
+    quota_reset_at = _format_quota_reset_at(_next_quota_reset_at(period_days=period_days))
     with get_connection() as connection:
         try:
             cursor = connection.execute(
@@ -100,9 +110,16 @@ def create_user(email: str, password: str, display_name: str = "") -> dict[str, 
                     used_quota,
                     quota_reset_at
                 )
-                VALUES (?, ?, ?, 'trial', 'trial', 10, 0, ?)
+                VALUES (?, ?, ?, 'trial', ?, ?, 0, ?)
                 """,
-                (normalized_email, hash_password(password), display_name.strip(), quota_reset_at),
+                (
+                    normalized_email,
+                    hash_password(password),
+                    display_name.strip(),
+                    DEFAULT_PLAN_CODE,
+                    monthly_quota,
+                    quota_reset_at,
+                ),
             )
             connection.commit()
         except sqlite3.IntegrityError as error:
@@ -167,10 +184,21 @@ def _coerce_quota_value(value: Any, default: int) -> int:
     return max(parsed, 0)
 
 
+def _quota_default_for_plan(plan_code: str | None) -> int:
+    return get_plan_quota(plan_code) or int(get_default_trial_plan()["quota"])
+
+
+def _period_days_for_plan(plan_code: str | None) -> int:
+    return get_plan_period_days(plan_code) or int(get_default_trial_plan()["period_days"])
+
+
 def get_remaining_quota(user: dict[str, Any] | None) -> int:
     if not user:
         return 0
-    monthly_quota = _coerce_quota_value(user.get("monthly_quota"), 10)
+    monthly_quota = _coerce_quota_value(
+        user.get("monthly_quota"),
+        _quota_default_for_plan(str(user.get("plan") or DEFAULT_PLAN_CODE)),
+    )
     used_quota = _coerce_quota_value(user.get("used_quota"), 0)
     return max(monthly_quota - used_quota, 0)
 
@@ -180,15 +208,17 @@ def ensure_user_quota_state(user_id: int) -> dict[str, Any] | None:
     if not user:
         return None
     now = _utc_now()
-    monthly_quota = _coerce_quota_value(user.get("monthly_quota"), 10)
+    plan_code = str(user.get("plan") or DEFAULT_PLAN_CODE)
+    monthly_quota = _coerce_quota_value(user.get("monthly_quota"), _quota_default_for_plan(plan_code))
     used_quota = _coerce_quota_value(user.get("used_quota"), 0)
     quota_reset_at = _parse_quota_reset_at(user.get("quota_reset_at"))
+    period_days = _period_days_for_plan(plan_code)
 
     if quota_reset_at is None:
-        quota_reset_at = _next_quota_reset_at(now)
+        quota_reset_at = _next_quota_reset_at(now, period_days=period_days)
     elif now >= quota_reset_at:
         used_quota = 0
-        quota_reset_at = _next_quota_reset_at(now)
+        quota_reset_at = _next_quota_reset_at(now, period_days=period_days)
 
     quota_reset_at_text = _format_quota_reset_at(quota_reset_at)
     with get_connection() as connection:
@@ -218,7 +248,10 @@ def get_user_quota(user_id: int) -> dict[str, Any] | None:
     user = ensure_user_quota_state(user_id)
     if not user:
         return None
-    monthly_quota = _coerce_quota_value(user.get("monthly_quota"), 10)
+    monthly_quota = _coerce_quota_value(
+        user.get("monthly_quota"),
+        _quota_default_for_plan(str(user.get("plan") or DEFAULT_PLAN_CODE)),
+    )
     used_quota = _coerce_quota_value(user.get("used_quota"), 0)
     quota_reset_at = str(user["quota_reset_at"])
     return {
@@ -235,7 +268,7 @@ def has_remaining_quota(user_id: int) -> bool:
     return bool(quota and quota["remaining_quota"] > 0)
 
 
-def increment_used_quota(user_id: int) -> dict[str, int] | None:
+def increment_used_quota(user_id: int) -> dict[str, Any] | None:
     user = ensure_user_quota_state(user_id)
     if not user:
         return None

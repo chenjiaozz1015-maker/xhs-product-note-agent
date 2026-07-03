@@ -7,6 +7,7 @@ import shutil
 from app.config import APP_TITLE, APP_VERSION, UPLOAD_DIR, GENERATED_DIR
 from app.services.auth_service import get_current_user, get_user_quota, increment_used_quota
 from app.services.note_builder import build_result_payload
+from app.services.plan_service import get_default_trial_plan, get_plan_config
 from app.services.poster_engine_adapter import generate_posters
 from app.services.record_service import create_generation_record, list_recent_generation_records
 
@@ -19,12 +20,15 @@ SUPPORTED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 def _index_context(request: Request, error: str = "", warning: str = "") -> dict:
     current_user = get_current_user(request)
     quota = get_user_quota(int(current_user["id"])) if current_user else None
+    current_plan = get_plan_config(str(current_user.get("plan"))) if current_user else None
     recent_records = list_recent_generation_records(int(current_user["id"])) if current_user else []
     return {
         "request": request,
         "app_title": APP_TITLE,
         "app_version": APP_VERSION,
         "current_user": current_user,
+        "current_plan": current_plan,
+        "trial_plan": get_default_trial_plan(),
         "quota": quota,
         "recent_records": recent_records,
         "error": error,
@@ -60,6 +64,8 @@ async def generate(
                 "app_title": APP_TITLE,
                 "app_version": APP_VERSION,
                 "current_user": current_user,
+                "current_plan": get_plan_config(str(current_user.get("plan"))),
+                "trial_plan": get_default_trial_plan(),
                 "quota": quota,
             },
             status_code=403,
@@ -125,6 +131,8 @@ async def generate(
                 "app_title": APP_TITLE,
                 "app_version": APP_VERSION,
                 "current_user": get_current_user(request),
+                "current_plan": get_plan_config(str(current_user.get("plan"))),
+                "trial_plan": get_default_trial_plan(),
                 "quota": quota,
                 "result": result_payload,
             },
