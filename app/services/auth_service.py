@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import os
 import sqlite3
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi import Request
@@ -12,6 +13,37 @@ from app.services.db import get_connection, init_db
 
 PBKDF2_ALGORITHM = "sha256"
 PBKDF2_ITERATIONS = 260_000
+QUOTA_PERIOD_DAYS = 30
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _format_quota_reset_at(value: datetime) -> str:
+    return value.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _parse_quota_reset_at(value: Any) -> datetime | None:
+    if not value:
+        return None
+    try:
+        raw_value = str(value)
+        if raw_value.endswith("Z"):
+            raw_value = raw_value[:-1] + "+00:00"
+        parsed = datetime.fromisoformat(raw_value)
+        return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+    except (TypeError, ValueError):
+        return None
+
+
+def _next_quota_reset_at(now: datetime | None = None) -> datetime:
+    return (now or _utc_now()) + timedelta(days=QUOTA_PERIOD_DAYS)
+
+
+def _quota_reset_date(value: str) -> str:
+    parsed = _parse_quota_reset_at(value)
+    return parsed.date().isoformat() if parsed else ""
 
 
 def normalize_email(email: str) -> str:
@@ -53,6 +85,7 @@ def _row_to_user(row: sqlite3.Row | None) -> dict[str, Any] | None:
 def create_user(email: str, password: str, display_name: str = "") -> dict[str, Any]:
     init_db()
     normalized_email = normalize_email(email)
+    quota_reset_at = _format_quota_reset_at(_next_quota_reset_at())
     with get_connection() as connection:
         try:
             cursor = connection.execute(
@@ -64,11 +97,12 @@ def create_user(email: str, password: str, display_name: str = "") -> dict[str, 
                     trial_status,
                     plan,
                     monthly_quota,
-                    used_quota
+                    used_quota,
+                    quota_reset_at
                 )
-                VALUES (?, ?, ?, 'trial', 'trial', 10, 0)
+                VALUES (?, ?, ?, 'trial', 'trial', 10, 0, ?)
                 """,
-                (normalized_email, hash_password(password), display_name.strip()),
+                (normalized_email, hash_password(password), display_name.strip(), quota_reset_at),
             )
             connection.commit()
         except sqlite3.IntegrityError as error:
@@ -141,16 +175,58 @@ def get_remaining_quota(user: dict[str, Any] | None) -> int:
     return max(monthly_quota - used_quota, 0)
 
 
-def get_user_quota(user_id: int) -> dict[str, int] | None:
+def ensure_user_quota_state(user_id: int) -> dict[str, Any] | None:
     user = get_user_by_id(user_id)
+    if not user:
+        return None
+    now = _utc_now()
+    monthly_quota = _coerce_quota_value(user.get("monthly_quota"), 10)
+    used_quota = _coerce_quota_value(user.get("used_quota"), 0)
+    quota_reset_at = _parse_quota_reset_at(user.get("quota_reset_at"))
+
+    if quota_reset_at is None:
+        quota_reset_at = _next_quota_reset_at(now)
+    elif now >= quota_reset_at:
+        used_quota = 0
+        quota_reset_at = _next_quota_reset_at(now)
+
+    quota_reset_at_text = _format_quota_reset_at(quota_reset_at)
+    with get_connection() as connection:
+        connection.execute(
+            """
+            UPDATE users
+            SET monthly_quota = ?, used_quota = ?, quota_reset_at = ?
+            WHERE id = ?
+            """,
+            (monthly_quota, used_quota, quota_reset_at_text, user_id),
+        )
+        connection.commit()
+
+    return {
+        **user,
+        "monthly_quota": monthly_quota,
+        "used_quota": used_quota,
+        "quota_reset_at": quota_reset_at_text,
+    }
+
+
+def reset_quota_if_needed(user_id: int) -> dict[str, Any] | None:
+    return ensure_user_quota_state(user_id)
+
+
+def get_user_quota(user_id: int) -> dict[str, Any] | None:
+    user = ensure_user_quota_state(user_id)
     if not user:
         return None
     monthly_quota = _coerce_quota_value(user.get("monthly_quota"), 10)
     used_quota = _coerce_quota_value(user.get("used_quota"), 0)
+    quota_reset_at = str(user["quota_reset_at"])
     return {
         "monthly_quota": monthly_quota,
         "used_quota": used_quota,
         "remaining_quota": max(monthly_quota - used_quota, 0),
+        "quota_reset_at": quota_reset_at,
+        "quota_reset_date": _quota_reset_date(quota_reset_at),
     }
 
 
@@ -160,7 +236,7 @@ def has_remaining_quota(user_id: int) -> bool:
 
 
 def increment_used_quota(user_id: int) -> dict[str, int] | None:
-    user = get_user_by_id(user_id)
+    user = ensure_user_quota_state(user_id)
     if not user:
         return None
 
@@ -172,10 +248,10 @@ def increment_used_quota(user_id: int) -> dict[str, int] | None:
         connection.execute(
             """
             UPDATE users
-            SET monthly_quota = ?, used_quota = ?
+            SET monthly_quota = ?, used_quota = ?, quota_reset_at = ?
             WHERE id = ?
             """,
-            (monthly_quota, next_used_quota, user_id),
+            (monthly_quota, next_used_quota, user["quota_reset_at"], user_id),
         )
         connection.commit()
 
@@ -183,4 +259,10 @@ def increment_used_quota(user_id: int) -> dict[str, int] | None:
         "monthly_quota": monthly_quota,
         "used_quota": next_used_quota,
         "remaining_quota": max(monthly_quota - next_used_quota, 0),
+        "quota_reset_at": user["quota_reset_at"],
+        "quota_reset_date": _quota_reset_date(str(user["quota_reset_at"])),
     }
+
+
+def get_quota_summary(user_id: int) -> dict[str, Any] | None:
+    return get_user_quota(user_id)

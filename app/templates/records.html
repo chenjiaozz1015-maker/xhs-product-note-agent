@@ -14,7 +14,7 @@
           <h1>我的生成记录</h1>
           <p>展示最近 30 条生成摘要，仅记录商品名、类目、内容类型、风格和额度消耗。</p>
           {% if quota %}
-          <p class="records-quota">当前套餐：试用账号 · 本月剩余 {{ quota.remaining_quota }} 次</p>
+          <p class="records-quota">当前套餐：试用账号 · 下次重置 {{ quota.quota_reset_date }}</p>
           {% endif %}
         </div>
         <div class="account-actions">
@@ -22,6 +22,27 @@
           <a class="btn btn-ghost" href="/pricing">查看套餐</a>
         </div>
       </section>
+
+      {% if quota %}
+      <section class="records-summary-grid" aria-label="本月使用统计">
+        <div class="card records-summary-card">
+          <span>本月已生成</span>
+          <strong>{{ quota.used_quota }} 次</strong>
+        </div>
+        <div class="card records-summary-card">
+          <span>本月剩余</span>
+          <strong>{{ quota.remaining_quota }} 次</strong>
+        </div>
+        <div class="card records-summary-card">
+          <span>本月额度</span>
+          <strong>{{ quota.monthly_quota }} 次</strong>
+        </div>
+        <div class="card records-summary-card">
+          <span>下次重置</span>
+          <strong>{{ quota.quota_reset_date }}</strong>
+        </div>
+      </section>
+      {% endif %}
 
       <section class="card records-card">
         {% if records %}
@@ -60,7 +81,7 @@
         {% endif %}
       </section>
 
-      <p class="version-note">种草机 {{ app_version }} 使用记录版</p>
+      <p class="version-note">种草机 {{ app_version }} 月度额度版</p>
     </main>
   </body>
 </html>

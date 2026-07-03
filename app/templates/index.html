@@ -15,8 +15,12 @@
           <span>当前套餐：试用账号</span>
           {% if quota and quota.remaining_quota > 0 %}
           <span class="quota-status">本月剩余：{{ quota.remaining_quota }} / {{ quota.monthly_quota }}</span>
+          <span>下次重置：{{ quota.quota_reset_date }}</span>
           {% else %}
           <span class="quota-status quota-status-empty">本月试用额度已用完</span>
+          {% if quota %}
+          <span>下次重置：{{ quota.quota_reset_date }}</span>
+          {% endif %}
           {% endif %}
         </div>
         <div class="account-actions">
@@ -129,10 +133,10 @@
         {% endif %}
         {% if current_user %}
           {% if quota and quota.remaining_quota > 0 %}
-        <div class="quota-hint quota-hint-ok">本月还可生成 {{ quota.remaining_quota }} 次。</div>
+        <div class="quota-hint quota-hint-ok">本月还可生成 {{ quota.remaining_quota }} 次，下次重置 {{ quota.quota_reset_date }}。</div>
           {% else %}
         <div class="quota-hint quota-hint-empty">
-          本月试用额度已用完，请升级套餐后继续使用。
+          本月试用额度已用完，将于 {{ quota.quota_reset_date }} 重置。也可以查看套餐升级更多生成次数。
           <a class="btn btn-ghost" href="/pricing">查看套餐</a>
         </div>
           {% endif %}
@@ -274,7 +278,7 @@
           <button class="btn btn-secondary copy-btn" type="button" data-copy-target="trial-feedback">复制反馈模板</button>
         </div>
       </section>
-      <p class="version-note">种草机 {{ app_version }} 使用记录版</p>
+      <p class="version-note">种草机 {{ app_version }} 月度额度版</p>
     </main>
     <script src="{{ url_for('static', path='js/app.js') }}"></script>
   </body>

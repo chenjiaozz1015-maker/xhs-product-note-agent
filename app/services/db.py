@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
     plan TEXT NOT NULL DEFAULT 'trial',
     monthly_quota INTEGER DEFAULT 10,
     used_quota INTEGER DEFAULT 0,
+    quota_reset_at TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_login_at TEXT
 )
@@ -59,5 +60,10 @@ def get_connection(database_path: Path | str | None = None) -> sqlite3.Connectio
 def init_db(database_path: Path | str | None = None) -> None:
     with get_connection(database_path) as connection:
         connection.execute(USER_TABLE_SQL)
+        user_columns = {
+            row["name"] for row in connection.execute("PRAGMA table_info(users)").fetchall()
+        }
+        if "quota_reset_at" not in user_columns:
+            connection.execute("ALTER TABLE users ADD COLUMN quota_reset_at TEXT")
         connection.execute(GENERATION_RECORDS_TABLE_SQL)
         connection.commit()

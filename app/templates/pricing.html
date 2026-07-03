@@ -14,7 +14,7 @@
           <h1>选择适合你的种草机套餐</h1>
           <p>当前仅展示套餐和入口预留，不接入真实支付，不创建订单，暂不做套餐升级生效。</p>
           {% if current_user and quota %}
-          <p class="pricing-account-note">当前套餐：试用账号 · 剩余额度 {{ quota.remaining_quota }} 次</p>
+          <p class="pricing-account-note">当前套餐：试用账号 · 本月剩余 {{ quota.remaining_quota }} / {{ quota.monthly_quota }} · 下次重置 {{ quota.quota_reset_date }}</p>
           {% endif %}
         </div>
         <div class="account-actions">
@@ -36,7 +36,9 @@
             <li>{{ feature }}</li>
             {% endfor %}
           </ul>
-          {% if plan.enabled %}
+          {% if current_user and loop.index == 1 %}
+          <button class="btn btn-ghost" type="button" disabled>当前试用账号</button>
+          {% elif plan.enabled %}
           <a class="btn btn-primary" href="{{ plan.href }}">{{ plan.button }}</a>
           {% else %}
           <button class="btn btn-ghost" type="button" disabled>{{ plan.button }}</button>
@@ -44,7 +46,7 @@
         </article>
         {% endfor %}
       </section>
-      <p class="version-note">种草机 {{ app_version }} 使用记录版</p>
+      <p class="version-note">种草机 {{ app_version }} 月度额度版</p>
     </main>
   </body>
 </html>

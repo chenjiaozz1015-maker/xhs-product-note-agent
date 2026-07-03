@@ -1214,6 +1214,32 @@ button, .secondary-btn, .copy-btn, .btn {
   font-weight: 800;
 }
 
+.records-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.records-summary-card {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  background: linear-gradient(135deg, #fff8f4 0%, #fff 100%);
+  border-color: #f0ddd4;
+}
+
+.records-summary-card span {
+  color: var(--home-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.records-summary-card strong {
+  color: var(--home-ink);
+  font-size: 1.15rem;
+  line-height: 1.25;
+}
+
 .records-card {
   overflow: hidden;
 }
@@ -1536,6 +1562,10 @@ button, .secondary-btn, .copy-btn, .btn {
   .records-hero {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
+  }
+
+  .records-summary-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
