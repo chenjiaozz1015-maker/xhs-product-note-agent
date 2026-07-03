@@ -4,6 +4,7 @@ from copy import deepcopy
 from typing import Any
 
 DEFAULT_PLAN_CODE = "trial"
+ACTIVE_QUOTA_PLAN_CODES = {"trial", "personal", "business"}
 
 _PLANS: dict[str, dict[str, Any]] = {
     "trial": {
@@ -132,3 +133,12 @@ def get_plan_display_name(plan_code: str | None) -> str:
 def get_plan_short_name(plan_code: str | None) -> str:
     plan = get_plan_config(plan_code)
     return str(plan.get("short_name") or plan.get("display_name") or "")
+
+
+def is_active_quota_plan(plan_code: str | None) -> bool:
+    return str(plan_code or "").strip() in ACTIVE_QUOTA_PLAN_CODES
+
+
+def normalize_plan_code(plan_code: str | None) -> str:
+    normalized = str(plan_code or "").strip()
+    return normalized if normalized in ACTIVE_QUOTA_PLAN_CODES else DEFAULT_PLAN_CODE

@@ -36,19 +36,21 @@
             <li>{{ feature }}</li>
             {% endfor %}
           </ul>
-          {% if current_user and current_user.plan == plan.code %}
+          {% if current_user and current_plan.code == plan.code %}
           <button class="btn btn-ghost" type="button" disabled>{{ plan.button_label.current if plan.button_label is mapping else "当前套餐" }}</button>
           {% elif plan.payment_enabled or plan.code == "custom" %}
           <a class="btn btn-primary" href="{{ plan.href }}">{{ plan.button_label if plan.button_label is string else plan.button_label.anonymous }}</a>
           {% elif not current_user and plan.code == "trial" %}
           <a class="btn btn-primary" href="{{ plan.href }}">{{ plan.button_label.anonymous }}</a>
+          {% elif current_user and plan.code == "trial" and current_plan.code != "trial" %}
+          <button class="btn btn-ghost" type="button" disabled>已开通更高套餐</button>
           {% else %}
           <button class="btn btn-ghost" type="button" disabled>{{ plan.button_label if plan.button_label is string else plan.button_label.disabled }}</button>
           {% endif %}
         </article>
         {% endfor %}
       </section>
-      <p class="version-note">种草机 {{ app_version }} 套餐配置版</p>
+      <p class="version-note">种草机 {{ app_version }} 套餐状态版</p>
     </main>
   </body>
 </html>

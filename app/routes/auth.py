@@ -10,12 +10,13 @@ from app.config import APP_TITLE, APP_VERSION
 from app.services.auth_service import (
     authenticate_user,
     create_user,
+    get_effective_plan_config,
     get_current_user,
     get_user_quota,
     login_user,
     logout_user,
 )
-from app.services.plan_service import get_default_trial_plan, get_plan_config, list_public_plans
+from app.services.plan_service import get_default_trial_plan, list_public_plans
 from app.services.record_service import list_user_generation_records
 
 router = APIRouter()
@@ -25,7 +26,7 @@ templates = Jinja2Templates(directory=str(Path(__file__).resolve().parents[1] / 
 def _auth_context(request: Request, **extra: object) -> dict[str, object]:
     current_user = get_current_user(request)
     quota = get_user_quota(int(current_user["id"])) if current_user else None
-    current_plan = get_plan_config(str(current_user.get("plan"))) if current_user else None
+    current_plan = get_effective_plan_config(current_user) if current_user else None
     return {
         "request": request,
         "app_title": APP_TITLE,

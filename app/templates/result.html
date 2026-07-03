@@ -23,8 +23,9 @@
       {% if quota %}
       <section class="card quota-result-tip">
         <div>
-          <strong>本次生成已使用 1 次额度</strong>
-          <span>本月剩余：{{ quota.remaining_quota }} 次</span>
+          <strong>当前套餐：{{ current_plan.short_name }}</strong>
+          <span>本次生成已使用 1 次额度</span>
+          <span>本月剩余：{{ quota.remaining_quota }} / {{ quota.monthly_quota }}</span>
           <span>下次重置：{{ quota.quota_reset_date }}</span>
         </div>
         {% if quota.remaining_quota <= 2 %}
@@ -172,7 +173,7 @@
         </ol>
       </section>
 
-      <p class="version-note">种草机 {{ app_version }} 套餐配置版</p>
+      <p class="version-note">种草机 {{ app_version }} 套餐状态版</p>
     </main>
     <script src="{{ url_for('static', path='js/app.js') }}"></script>
   </body>

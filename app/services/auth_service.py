@@ -13,8 +13,10 @@ from app.services.db import get_connection, init_db
 from app.services.plan_service import (
     DEFAULT_PLAN_CODE,
     get_default_trial_plan,
+    get_plan_config,
     get_plan_period_days,
     get_plan_quota,
+    normalize_plan_code,
 )
 
 PBKDF2_ALGORITHM = "sha256"
@@ -185,39 +187,43 @@ def _coerce_quota_value(value: Any, default: int) -> int:
 
 
 def _quota_default_for_plan(plan_code: str | None) -> int:
-    return get_plan_quota(plan_code) or int(get_default_trial_plan()["quota"])
+    return get_plan_quota(normalize_plan_code(plan_code)) or int(get_default_trial_plan()["quota"])
 
 
 def _period_days_for_plan(plan_code: str | None) -> int:
-    return get_plan_period_days(plan_code) or int(get_default_trial_plan()["period_days"])
+    return get_plan_period_days(normalize_plan_code(plan_code)) or int(get_default_trial_plan()["period_days"])
 
 
-def get_remaining_quota(user: dict[str, Any] | None) -> int:
+def normalize_user_plan(plan_code: str | None) -> str:
+    return normalize_plan_code(plan_code)
+
+
+def get_effective_plan_config(user: dict[str, Any] | None) -> dict[str, Any]:
     if not user:
-        return 0
-    monthly_quota = _coerce_quota_value(
-        user.get("monthly_quota"),
-        _quota_default_for_plan(str(user.get("plan") or DEFAULT_PLAN_CODE)),
-    )
-    used_quota = _coerce_quota_value(user.get("used_quota"), 0)
-    return max(monthly_quota - used_quota, 0)
+        return get_default_trial_plan()
+    return get_plan_config(normalize_user_plan(user.get("plan")))
 
 
-def ensure_user_quota_state(user_id: int) -> dict[str, Any] | None:
+def sync_user_quota_with_plan(user_id: int) -> dict[str, Any] | None:
     user = get_user_by_id(user_id)
     if not user:
         return None
-    now = _utc_now()
-    plan_code = str(user.get("plan") or DEFAULT_PLAN_CODE)
-    monthly_quota = _coerce_quota_value(user.get("monthly_quota"), _quota_default_for_plan(plan_code))
+
+    effective_plan_code = normalize_user_plan(user.get("plan"))
+    expected_quota = _quota_default_for_plan(effective_plan_code)
+    monthly_quota = _coerce_quota_value(user.get("monthly_quota"), expected_quota)
     used_quota = _coerce_quota_value(user.get("used_quota"), 0)
     quota_reset_at = _parse_quota_reset_at(user.get("quota_reset_at"))
-    period_days = _period_days_for_plan(plan_code)
+    period_days = _period_days_for_plan(effective_plan_code)
+    now = _utc_now()
 
+    if monthly_quota != expected_quota:
+        monthly_quota = expected_quota
     if quota_reset_at is None:
         quota_reset_at = _next_quota_reset_at(now, period_days=period_days)
     elif now >= quota_reset_at:
         used_quota = 0
+        monthly_quota = expected_quota
         quota_reset_at = _next_quota_reset_at(now, period_days=period_days)
 
     quota_reset_at_text = _format_quota_reset_at(quota_reset_at)
@@ -234,10 +240,29 @@ def ensure_user_quota_state(user_id: int) -> dict[str, Any] | None:
 
     return {
         **user,
+        "effective_plan_code": effective_plan_code,
         "monthly_quota": monthly_quota,
         "used_quota": used_quota,
         "quota_reset_at": quota_reset_at_text,
     }
+
+
+def get_remaining_quota(user: dict[str, Any] | None) -> int:
+    if not user:
+        return 0
+    monthly_quota = _coerce_quota_value(
+        user.get("monthly_quota"),
+        _quota_default_for_plan(str(user.get("plan") or DEFAULT_PLAN_CODE)),
+    )
+    used_quota = _coerce_quota_value(user.get("used_quota"), 0)
+    return max(monthly_quota - used_quota, 0)
+
+
+def ensure_user_quota_state(user_id: int) -> dict[str, Any] | None:
+    user = sync_user_quota_with_plan(user_id)
+    if not user:
+        return None
+    return user
 
 
 def reset_quota_if_needed(user_id: int) -> dict[str, Any] | None:
@@ -258,6 +283,7 @@ def get_user_quota(user_id: int) -> dict[str, Any] | None:
         "monthly_quota": monthly_quota,
         "used_quota": used_quota,
         "remaining_quota": max(monthly_quota - used_quota, 0),
+        "plan_code": str(user.get("effective_plan_code") or normalize_user_plan(user.get("plan"))),
         "quota_reset_at": quota_reset_at,
         "quota_reset_date": _quota_reset_date(quota_reset_at),
     }

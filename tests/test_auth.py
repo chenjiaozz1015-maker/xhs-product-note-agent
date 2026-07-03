@@ -178,6 +178,15 @@ def _set_user_quota(user_id: int, used_quota: int, quota_reset_at: str | None) -
         connection.commit()
 
 
+def _set_user_plan(user_id: int, plan_code: str) -> None:
+    with db.get_connection() as connection:
+        connection.execute(
+            "UPDATE users SET plan = ? WHERE id = ?",
+            (plan_code, user_id),
+        )
+        connection.commit()
+
+
 def test_plan_service_public_plans_and_quota_rules():
     plans = list_public_plans()
     codes = [plan["code"] for plan in plans]
@@ -423,6 +432,82 @@ def test_quota_resets_after_reset_time(monkeypatch):
     assert updated_user["used_quota"] == 0
 
 
+def test_plan_change_to_personal_updates_quota_and_preserves_usage(monkeypatch):
+    client = _client(monkeypatch, "plan_personal")
+    _register(client)
+    user = get_user_by_email("user@example.com")
+    assert user is not None
+    _set_user_quota(int(user["id"]), used_quota=3, quota_reset_at=_quota_time(10))
+    _set_user_plan(int(user["id"]), "personal")
+
+    quota = get_user_quota(int(user["id"]))
+
+    assert quota is not None
+    assert quota["plan_code"] == "personal"
+    assert quota["monthly_quota"] == 100
+    assert quota["used_quota"] == 3
+    assert quota["remaining_quota"] == 97
+
+
+def test_plan_change_to_business_updates_quota(monkeypatch):
+    client = _client(monkeypatch, "plan_business")
+    _register(client)
+    user = get_user_by_email("user@example.com")
+    assert user is not None
+    _set_user_plan(int(user["id"]), "business")
+
+    quota = get_user_quota(int(user["id"]))
+
+    assert quota is not None
+    assert quota["plan_code"] == "business"
+    assert quota["monthly_quota"] == 500
+
+
+def test_unknown_plan_falls_back_to_trial(monkeypatch):
+    client = _client(monkeypatch, "plan_unknown")
+    _register(client)
+    user = get_user_by_email("user@example.com")
+    assert user is not None
+    _set_user_plan(int(user["id"]), "mystery")
+
+    quota = get_user_quota(int(user["id"]))
+
+    assert quota is not None
+    assert quota["plan_code"] == "trial"
+    assert quota["monthly_quota"] == 10
+
+
+def test_display_only_plans_fall_back_to_trial_quota(monkeypatch):
+    client = _client(monkeypatch, "plan_display_only")
+    _register(client)
+    user = get_user_by_email("user@example.com")
+    assert user is not None
+
+    for plan_code in ("credits_100", "custom"):
+        _set_user_plan(int(user["id"]), plan_code)
+        quota = get_user_quota(int(user["id"]))
+        assert quota is not None
+        assert quota["plan_code"] == "trial"
+        assert quota["monthly_quota"] == 10
+
+
+def test_expired_quota_resets_using_current_business_plan(monkeypatch):
+    client = _client(monkeypatch, "plan_reset_business")
+    _register(client)
+    user = get_user_by_email("user@example.com")
+    assert user is not None
+    _set_user_plan(int(user["id"]), "business")
+    _set_user_quota(int(user["id"]), used_quota=500, quota_reset_at=_quota_time(-1))
+
+    quota = get_user_quota(int(user["id"]))
+
+    assert quota is not None
+    assert quota["plan_code"] == "business"
+    assert quota["monthly_quota"] == 500
+    assert quota["used_quota"] == 0
+    assert quota["remaining_quota"] == 500
+
+
 def test_expired_quota_allows_generate_again(monkeypatch):
     client = _client(monkeypatch, "expired_quota_generate")
     _register(client)
@@ -553,6 +638,20 @@ def test_home_displays_quota_for_logged_in_user(monkeypatch):
     assert quota["quota_reset_date"] in response.text
 
 
+def test_home_displays_personal_plan_quota(monkeypatch):
+    client = _client(monkeypatch, "home_personal_plan")
+    _register(client)
+    user = get_user_by_email("user@example.com")
+    assert user is not None
+    _set_user_plan(int(user["id"]), "personal")
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert get_plan_config("personal")["short_name"] in response.text
+    assert "100" in response.text
+
+
 def test_records_page_requires_login(monkeypatch):
     client = _client(monkeypatch, "records_requires_login")
 
@@ -576,6 +675,20 @@ def test_records_page_for_logged_in_user_shows_empty_state(monkeypatch):
     assert "records-empty" in response.text
     assert "records-summary-card" in response.text
     assert quota["quota_reset_date"] in response.text
+
+
+def test_records_page_displays_business_plan_and_quota(monkeypatch):
+    client = _client(monkeypatch, "records_business_plan")
+    _register(client)
+    user = get_user_by_email("user@example.com")
+    assert user is not None
+    _set_user_plan(int(user["id"]), "business")
+
+    response = client.get("/me/records")
+
+    assert response.status_code == 200
+    assert get_plan_config("business")["short_name"] in response.text
+    assert "500" in response.text
 
 
 def test_home_shows_recent_records_for_logged_in_user(monkeypatch):
@@ -659,6 +772,21 @@ def test_pricing_page_shows_logged_in_quota(monkeypatch):
     assert quota["quota_reset_date"] in response.text
     assert get_plan_config("trial")["short_name"] in response.text
     assert "当前试用账号" in response.text
+
+
+def test_pricing_page_marks_current_personal_plan(monkeypatch):
+    client = _client(monkeypatch, "pricing_personal_current")
+    _register(client)
+    user = get_user_by_email("user@example.com")
+    assert user is not None
+    _set_user_plan(int(user["id"]), "personal")
+
+    response = client.get("/pricing")
+
+    assert response.status_code == 200
+    assert get_plan_config("personal")["short_name"] in response.text
+    assert "当前套餐" in response.text
+    assert "已开通更高套餐" in response.text
 
 
 def test_pricing_page_is_public(monkeypatch):
