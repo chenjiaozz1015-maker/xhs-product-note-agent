@@ -13,7 +13,7 @@ from app.services.auth_service import (
 )
 from app.services.note_builder import build_result_payload
 from app.services.plan_service import get_default_trial_plan
-from app.services.poster_engine_adapter import generate_posters
+from app.services.poster_engine_adapter import PosterRenderInput, PosterRenderResult, render_posters
 from app.services.record_service import create_generation_record, list_recent_generation_records
 
 router = APIRouter()
@@ -106,19 +106,27 @@ async def generate(
             product_name=product_name,
             category=category,
         )
-        poster_paths = generate_posters(
-            image_path,
-            output_dir=str(GENERATED_DIR),
-            title=str(result_payload["cover_title"]),
-            subtitle=str(result_payload["cover_subtitle"]),
-            style=style,
-            selling_points=list(result_payload["selling_points"]),
-            summary_title=str(result_payload["summary_title"]),
-            suitable_for=str(result_payload["suitable_for"]),
-            recommend_reason=str(result_payload["recommend_reason"]),
-            summary_sentence=str(result_payload["summary_sentence"]),
+        poster_result = render_posters(
+            PosterRenderInput(
+                product_image_path=image_path,
+                output_dir=str(GENERATED_DIR),
+                product_name=product_name,
+                category=category,
+                content_type=content_type,
+                style=style,
+                note_data={
+                    "cover_title": str(result_payload["cover_title"]),
+                    "cover_subtitle": str(result_payload["cover_subtitle"]),
+                    "selling_points": list(result_payload["selling_points"]),
+                    "summary_title": str(result_payload["summary_title"]),
+                    "suitable_for": str(result_payload["suitable_for"]),
+                    "recommend_reason": str(result_payload["recommend_reason"]),
+                    "summary_sentence": str(result_payload["summary_sentence"]),
+                },
+                image_count=3,
+            )
         )
-        result_payload["image_paths"] = poster_paths
+        result_payload["image_paths"] = poster_result.image_paths
         quota = increment_used_quota(int(current_user["id"]))
         create_generation_record(
             user_id=int(current_user["id"]),

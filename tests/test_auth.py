@@ -323,8 +323,12 @@ def test_logged_in_generate_enters_existing_flow(monkeypatch):
     )
     monkeypatch.setattr(
         pages,
-        "generate_posters",
-        lambda *args, **kwargs: ["/static/generated/fake.png"],
+        "render_posters",
+        lambda *args, **kwargs: pages.PosterRenderResult(
+            success=True,
+            image_paths=["/static/generated/fake.png"],
+            engine_type="pillow",
+        ),
     )
 
     response = client.post(
@@ -369,13 +373,17 @@ def test_generate_with_exhausted_quota_is_blocked_and_not_incremented(monkeypatc
         )
         connection.commit()
 
-    called = {"generate_posters": False}
+    called = {"render_posters": False}
 
     def _should_not_generate(*args, **kwargs):
-        called["generate_posters"] = True
-        return ["/static/generated/fake.png"]
+        called["render_posters"] = True
+        return pages.PosterRenderResult(
+            success=True,
+            image_paths=["/static/generated/fake.png"],
+            engine_type="pillow",
+        )
 
-    monkeypatch.setattr(pages, "generate_posters", _should_not_generate)
+    monkeypatch.setattr(pages, "render_posters", _should_not_generate)
 
     response = client.post(
         "/generate",
@@ -392,7 +400,7 @@ def test_generate_with_exhausted_quota_is_blocked_and_not_incremented(monkeypatc
 
     assert response.status_code == 403
     assert "本月试用额度已用完" in response.text
-    assert called["generate_posters"] is False
+    assert called["render_posters"] is False
     assert updated_user is not None
     assert updated_user["used_quota"] == 10
     assert _record_count(int(user["id"])) == 0
@@ -534,7 +542,15 @@ def test_expired_quota_allows_generate_again(monkeypatch):
             "category": "category",
         },
     )
-    monkeypatch.setattr(pages, "generate_posters", lambda *args, **kwargs: ["/static/generated/fake.png"])
+    monkeypatch.setattr(
+        pages,
+        "render_posters",
+        lambda *args, **kwargs: pages.PosterRenderResult(
+            success=True,
+            image_paths=["/static/generated/fake.png"],
+            engine_type="pillow",
+        ),
+    )
 
     response = client.post(
         "/generate",
@@ -600,7 +616,7 @@ def test_generate_failure_does_not_create_record_or_deduct_quota(monkeypatch):
     def _fail_generate(*args, **kwargs):
         raise RuntimeError("poster failed")
 
-    monkeypatch.setattr(pages, "generate_posters", _fail_generate)
+    monkeypatch.setattr(pages, "render_posters", _fail_generate)
 
     response = client.post(
         "/generate",

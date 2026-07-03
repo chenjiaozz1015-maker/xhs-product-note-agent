@@ -17,11 +17,12 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 APP_NAME = os.getenv("APP_NAME", "种草机")
 APP_TITLE = os.getenv("APP_TITLE", APP_NAME)
-APP_VERSION = os.getenv("APP_VERSION", "v0.3-7")
+APP_VERSION = os.getenv("APP_VERSION", "v0.4-1")
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))
 SESSION_SECRET = os.getenv("SESSION_SECRET", "change-this-session-secret")
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///data/zhongcaoji.db")
+POSTER_ENGINE_TYPE = os.getenv("POSTER_ENGINE_TYPE", "pillow").strip() or "pillow"
 
 
 def _sqlite_path_from_url(database_url: str) -> Path:
