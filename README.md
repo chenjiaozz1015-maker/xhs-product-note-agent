@@ -5,7 +5,7 @@
 上传商品照片、商品名称、商品类目和一句描述，自动生成小红书风格图片素材包和发布文案。
 
 ## 当前版本
-种草机 v0.3-6 套餐状态版
+种草机 v0.3-7 运营脚本版
 
 ## 线上试用地址
 https://zhongcaoji.onrender.com/
@@ -72,7 +72,7 @@ py -m pytest -q
 ```
 
 ## 账号基础版说明
-当前 v0.3-6 在套餐配置层基础上新增套餐状态生效预留：
+当前 v0.3-7 在套餐配置层基础上新增中心化运营脚本，用于开发期和运营期手动管理用户套餐：
 
 - 支持用户自助注册
 - 支持邮箱和密码登录
@@ -98,10 +98,12 @@ py -m pytest -q
 - 额度周期从套餐配置读取
 - `/pricing` 页面改为配置驱动渲染
 - 页面当前套餐名称从配置读取
-- `users.plan` 开始作为有效套餐状态
-- `trial / personal / business` 对应额度规则正式生效
-- 读取额度时自动同步 `monthly_quota` 与当前 plan
-- plan 变更后保留 `used_quota`，不清空历史使用
+- 新增 `scripts/manage_user_plan.py`
+- 支持按邮箱查询用户套餐、额度和重置时间
+- 支持手动将用户 plan 设置为 `trial / personal / business`
+- 修改 plan 后复用服务层同步 `monthly_quota`
+- 保留 `used_quota`，不清空历史使用
+- 用于没有后台和支付系统前的人工开通套餐
 
 当前账号基础版暂不做：
 
@@ -150,7 +152,46 @@ py -m pytest -q
 - 系统下次读取额度时会自动按新套餐刷新 `monthly_quota`
 - `credits_100` 和 `custom` 当前仅展示，不参与实际额度生效
 
-当前 v0.3-6 只是套餐状态生效预留，不代表真实支付已开通。
+当前 v0.3-7 仍然不接真实支付、不创建订单、不做网页后台。
+
+## 中心化运营脚本使用说明
+
+查看用户：
+
+```bash
+python scripts/manage_user_plan.py show --email user@example.com
+```
+
+开通个人月卡：
+
+```bash
+python scripts/manage_user_plan.py set-plan --email user@example.com --plan personal
+```
+
+开通商家月卡：
+
+```bash
+python scripts/manage_user_plan.py set-plan --email user@example.com --plan business
+```
+
+切回试用账号：
+
+```bash
+python scripts/manage_user_plan.py set-plan --email user@example.com --plan trial
+```
+
+查看最近用户：
+
+```bash
+python scripts/manage_user_plan.py list --limit 20
+```
+
+说明：
+
+- 本脚本适用于中心化部署场景
+- 操作的是当前服务器上的 `data/zhongcaoji.db`
+- 后续接支付后，支付回调也可以复用同样的 plan 更新逻辑
+- 当前不接真实支付，不创建订单
 
 ## 商业化入口预留
 当前预留套餐展示页：
@@ -195,7 +236,7 @@ GET /health
 {
   "status": "ok",
   "app": "zhongcaoji",
-  "version": "v0.3-6",
+  "version": "v0.3-7",
   "uploads_dir_exists": true,
   "generated_dir_exists": true,
   "static_dir_exists": true,
@@ -260,7 +301,7 @@ py -m pytest -q
 - `third_party/poster_engine/` 预留放置外部引擎或适配代码
 - 后续可以在 adapter 中接入 GitHub 公共海报 / 图像生成器
 - 后续可以把模板 JSON、图层布局、贴纸、背景等能力接入 adapter
-- 当前 v0.3-6 不实际接入外部引擎，不引入新依赖，不下载外部代码
+- 当前 v0.3-7 不实际接入外部引擎，不引入新依赖，不下载外部代码
 
 ## 后续部署建议
 当前项目适合部署到 Render、Railway、腾讯云轻量服务器等平台。
@@ -286,6 +327,7 @@ py -m pytest -q
 - 反馈希望增加的功能
 
 ## 版本记录
+- v0.3-7：新增中心化运营脚本 `scripts/manage_user_plan.py`；支持按邮箱查询用户套餐和额度；支持手动将用户 plan 设置为 `trial / personal / business`；修改 plan 后复用服务层同步 `monthly_quota`；`used_quota` 保留，不清空历史使用；用于没有后台和支付系统前的人工开通套餐；不做网页后台、不接真实支付、不做订单。
 - v0.3-6：`users.plan` 开始作为有效套餐状态；`trial / personal / business` 对应额度规则正式生效；trial 为 10 次 / 30 天，personal 为 100 次 / 30 天，business 为 500 次 / 30 天；读取额度时自动同步 `monthly_quota` 与当前 plan；plan 变更后保留 `used_quota`；`/pricing` 当前套餐卡会显示“当前套餐”；首页、结果页、我的记录页显示当前套餐名称和对应额度；仍不接真实支付、不创建订单、不做后台管理。
 - v0.3-5：新增套餐配置层；免费试用、个人月卡、商家月卡、次数包、定制版统一由配置驱动；注册默认额度从 trial 配置读取；额度周期从套餐配置读取；`/pricing` 页面改为配置驱动渲染；页面当前套餐名称从配置读取；当前仍不接真实支付、不创建订单、不做套餐升级生效。
 - v0.3-4：新增 `quota_reset_at` 月度额度周期字段；新注册用户 30 天后自动重置试用额度；旧用户自动补齐 `quota_reset_at`；读取额度时自动检查是否需要重置；首页、结果页、套餐页显示下次重置时间；`/me/records` 增加本月使用统计摘要；不接真实支付、不做订单、不做后台。
@@ -308,4 +350,4 @@ py -m pytest -q
 - v0.2-5：增强生成图片的风格差异，清新简约、可爱手账、生活方式、干货清单、温柔日常拥有不同视觉主题，卖点图和总结图根据风格调整展示方式；修正版强化版式差异、去除后置叠层感，并优化食品场景文案兜底
 
 ## Render 版本变量提醒
-`/health` 返回的 `version` 优先读取 `APP_VERSION` 环境变量，代码默认值为 `v0.3-6`。如果 Render 线上 `/health` 仍显示旧版本，例如 `v0.1-5`，请检查 Render Environment 里的 `APP_VERSION`，改为 `v0.3-6` 或删除该环境变量后重新部署。
+`/health` 返回的 `version` 优先读取 `APP_VERSION` 环境变量，代码默认值为 `v0.3-7`。如果 Render 线上 `/health` 仍显示旧版本，例如 `v0.1-5`，请检查 Render Environment 里的 `APP_VERSION`，改为 `v0.3-7` 或删除该环境变量后重新部署。
