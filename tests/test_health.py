@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 
 from app.config import APP_VERSION
 from app.main import health
@@ -10,7 +10,7 @@ def test_health_returns_version_and_directory_status():
     assert payload["status"] == "ok"
     assert payload["app"] == "zhongcaoji"
     assert payload["version"] == APP_VERSION
-    assert payload["version"] == "v0.4-1"
+    assert payload["version"] == "v0.4-3"
     assert payload["uploads_dir_exists"] is True
     assert payload["generated_dir_exists"] is True
     assert payload["static_dir_exists"] is True
@@ -18,3 +18,4 @@ def test_health_returns_version_and_directory_status():
     assert payload["js_file_exists"] is True
     assert "font_file_exists" in payload
     assert "font_path" in payload
+

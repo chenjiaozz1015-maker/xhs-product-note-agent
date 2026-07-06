@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from app.config import POSTER_ENGINE_TYPE
-from app.services.image_composer import compose_posters
+from app.services.image_composer import compose_posters_enhanced
 
 
 CANVAS_SIZE = (1080, 1440)
@@ -46,7 +46,7 @@ def resolve_engine_type(engine_type: str | None = None) -> str:
 
 def render_posters_with_pillow(render_input: PosterRenderInput) -> PosterRenderResult:
     note_data = render_input.note_data
-    image_paths = compose_posters(
+    image_paths = compose_posters_enhanced(
         input_image_path=render_input.product_image_path,
         output_dir=render_input.output_dir,
         title=str(note_data.get("cover_title", "种草机")),
@@ -57,6 +57,9 @@ def render_posters_with_pillow(render_input: PosterRenderInput) -> PosterRenderR
         suitable_for=str(note_data.get("suitable_for", "")),
         recommend_reason=str(note_data.get("recommend_reason", "")),
         summary_sentence=str(note_data.get("summary_sentence", "")),
+        category=render_input.category,
+        content_type=render_input.content_type,
+        product_name=render_input.product_name,
     )
     return PosterRenderResult(success=True, image_paths=image_paths, engine_type="pillow")
 

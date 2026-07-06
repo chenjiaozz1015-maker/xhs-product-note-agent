@@ -1,56 +1,80 @@
-# 种草机
-
+﻿# 种草机
 `xhs-product-note-agent`
 
-上传商品照片、商品名称、商品类目和一句描述，自动生成小红书风格图片素材包和发布文案。
+上传商品图片、商品名称、商品类目和一句描述，自动生成小红书风格图片素材包与发布文案。
 
 ## 当前版本
-种草机 v0.4-1 海报引擎预留版
+种草机 v0.4-3 类目词库增强版
 
-## 线上试用地址
+## 在线试用
 https://zhongcaoji.onrender.com/
 
-## 适合谁
-- 普通小红书好物分享用户
-- 小商家
-- 初级内容创作者
-- 宝妈 / 探店 / 测评类账号
-- 想快速把商品照片变成可发布图文的人
+## 当前能力
+- 用户注册、登录、退出
+- trial / personal / business 套餐配置与额度生效
+- 生成成功后扣减额度并写入生成记录
+- 首页显示剩余额度、下次重置时间、最近记录
+- `/pricing` 套餐展示页
+- `/me/records` 使用记录页
+- 通过 `poster_engine_adapter.py` + `pillow` 生成 3 张图片
+- 结果页支持下载、复制、编辑标题/正文/标签/评论引导
 
-## 当前已实现
-- 上传商品图片
-- 商品图片预览
-- 填写商品名称
-- 选择商品类目
-- 填写一句商品描述
-- 选择内容类型和风格
-- 根据商品类目生成更相关的标题、正文、标签、评论引导
-- 生成 3 张小红书风格图片
-  - 封面图
-  - 卖点 / 体验图
-  - 总结推荐图
-- 点击大图预览
-- 下载单张图片
-- 下载全部图片
-- 复制标题、正文、标签、评论引导、全部发布文案
-- 中文字体渲染修复
-- 基础错误提示
-- 生成按钮 loading / disabled
-- 结果页试用反馈模板复制
-- 移动端适配
+## v0.4-3 本轮增强
+- 新增商品细分类目识别逻辑，集中在 `app/services/category_profile.py`
+- 食品饮品细分为：`bakery`、`drink`、`snack`、`light_meal`
+- 美妆护肤细分为：`skincare`、`makeup`、`hand_body_care`、`portable_care`
+- 家居日用细分为：`cup_bottle`、`storage`、`cleaning`、`desktop_commute`
+- 标题、正文、标签、评论引导、图片卖点统一复用细分类目词库
+- 继续使用规则引擎，不接大模型，不接外部 GitHub 图片引擎
+- 不影响账号、额度、套餐、生成记录和运营脚本链路
 
-## 当前未实现
-- AI 大模型文案
-- 图片识别
-- 自动识别商品类目
-- 登录
-- 支付
-- 数据库
-- 后端 ZIP 打包
-- 自动发布小红书
-- 视频生成
-- 商品库
-- 多模板系统
+## 当前额度规则
+- `trial` 默认 10 次 / 30 天
+- `personal` 默认 100 次 / 30 天
+- `business` 默认 500 次 / 30 天
+- 周期从注册成功时间开始计算，不是自然月
+- `quota_reset_at = 注册成功时间 + 30 天`
+- 到期后读取额度时自动重置 `used_quota = 0`
+- 当前不接真实支付，不做订单，不做后台升级生效
+
+## 海报引擎说明
+- 当前默认引擎：`pillow`
+- 统一入口：`app/services/poster_engine_adapter.py`
+- 可配置：`POSTER_ENGINE_TYPE=pillow`
+- 预留：`external_placeholder`
+- 当前 v0.4-3 不下载外部代码，不接真实外部海报引擎
+
+## 中心化运营脚本
+查看用户：
+```bash
+python scripts/manage_user_plan.py show --email user@example.com
+```
+
+开通个人月卡：
+```bash
+python scripts/manage_user_plan.py set-plan --email user@example.com --plan personal
+```
+
+开通商家月卡：
+```bash
+python scripts/manage_user_plan.py set-plan --email user@example.com --plan business
+```
+
+切回试用账号：
+```bash
+python scripts/manage_user_plan.py set-plan --email user@example.com --plan trial
+```
+
+查看最近用户：
+```bash
+python scripts/manage_user_plan.py list --limit 20
+```
+
+说明：
+- 脚本操作当前服务器上的 `data/zhongcaoji.db`
+- 当前只支持 `trial / personal / business`
+- 修改 plan 后会复用服务层同步 `monthly_quota`
+- `used_quota` 保留，不清空历史使用
 
 ## 本地启动
 ```bash
@@ -61,7 +85,6 @@ py -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 访问：
-
 ```text
 http://127.0.0.1:8000/
 ```
@@ -71,294 +94,11 @@ http://127.0.0.1:8000/
 py -m pytest -q
 ```
 
-## 账号基础版说明
-当前 v0.4-1 在现有套餐、额度和生成流程基础上增强海报引擎适配层，为后续接入外部 GitHub 图片 / 海报工具预留统一入口：
-
-- 支持用户自助注册
-- 支持邮箱和密码登录
-- 支持退出登录
-- 密码使用 PBKDF2-SHA256 哈希存储，不保存明文密码
-- SQLite 本地用户表默认位于 `data/zhongcaoji.db`
-- 注册后自动开通 `trial` 试用状态
-- 用户表预留套餐和额度字段
-- trial 用户默认每月 10 次生成额度
-- 生成成功后 `used_quota + 1`
-- 额度用完后拦截生成并引导查看套餐
-- 首页显示剩余额度
-- 结果页显示本次生成后的剩余额度
-- 每次生成成功后写入 `generation_records` 生成记录
-- 首页显示最近 5 条生成记录
-- 新增 `/me/records` 我的生成记录页
-- 新增 `quota_reset_at` 月度额度周期字段
-- 读取额度时自动检查是否需要重置
-- 首页、结果页、套餐页显示下次重置时间
-- `/me/records` 显示本月使用统计摘要
-- 免费试用、个人月卡、商家月卡、次数包、定制版统一由配置驱动
-- 注册默认额度从 trial 配置读取
-- 额度周期从套餐配置读取
-- `/pricing` 页面改为配置驱动渲染
-- 页面当前套餐名称从配置读取
-- 增强 `app/services/poster_engine_adapter.py`
-- 新增 `POSTER_ENGINE_TYPE` 配置，默认值为 `pillow`
-- 当前图片生成统一通过 adapter 入口调度
-- 保留 Pillow 作为默认引擎和兜底方案
-- 预留 `external_placeholder` 外部引擎占位
-- 当前不接入外部 GitHub 项目，不增加大型依赖
-
-当前账号基础版暂不做：
-
-- 邮箱验证
-- 短信验证
-- 找回密码
-- 第三方登录
-- 真实支付
-- 后台管理
-
-当前额度规则：
-- trial 用户默认 10 次 / 30 天
-- 新用户以注册成功时间为起点，注册时立即设置 `quota_reset_at = 当前时间 + 30 天`
-- 旧用户如果缺少 `quota_reset_at`，以首次补齐时间为起点
-- 额度周期不从第一次生成开始计算
-- 到期后 `used_quota` 自动重置为 0
-- `quota_reset_at` 顺延 30 天
-- 当前不是自然月重置
-- 当前不支持真实套餐升级
-- 当前不接支付
-- 后续如果接真实付费套餐，付费套餐可以按“支付成功日起 30 天”单独设计
-- 暂不做真实支付
-- 暂不做套餐升级生效
-- 暂不做订单
-
-后续版本会增加额度重置、套餐升级、订单支付和使用分析。
-
-当前记录能力：
-- 只记录生成行为摘要
-- 不记录完整文案内容
-- 不记录图片文件路径
-- 不做后台管理
-- 不做导出
-- 后续可扩展为用户后台、管理员后台和使用分析
-
-当前内置套餐：
-- trial：10 次 / 30 天，0 元
-- personal：100 次 / 30 天，9.9 元 / 月
-- business：500 次 / 30 天，29.9 元 / 月
-- credits_100：9.9 元 / 100 次，规则后续确定
-- custom：联系开通
-
-当前套餐状态机制：
-- 现在可通过手动修改 `users.plan` 验证套餐生效
-- 后续接支付时，支付成功后只需把 `users.plan` 更新为 `personal` 或 `business`
-- 系统下次读取额度时会自动按新套餐刷新 `monthly_quota`
-- `credits_100` 和 `custom` 当前仅展示，不参与实际额度生效
-
-当前 v0.4-1 仍然不接真实支付、不创建订单、不做网页后台，也不直接下载或接入外部仓库代码。
-
-## 海报引擎扩展说明
-
-- 当前内置引擎：`pillow`
-- 后续可接入 GitHub 上的海报 / 图片生成工具
-- 外部引擎应通过 `poster_engine_adapter.py` 接入
-- 不建议直接替换 `image_composer.py`
-- 当前 Pillow 引擎作为默认和兜底方案
-- 未来外部引擎需要适配统一输入输出结构
-- 适配完成后，可逐步让部分模板使用外部引擎
-
-## 中心化运营脚本使用说明
-
-查看用户：
-
-```bash
-python scripts/manage_user_plan.py show --email user@example.com
-```
-
-开通个人月卡：
-
-```bash
-python scripts/manage_user_plan.py set-plan --email user@example.com --plan personal
-```
-
-开通商家月卡：
-
-```bash
-python scripts/manage_user_plan.py set-plan --email user@example.com --plan business
-```
-
-切回试用账号：
-
-```bash
-python scripts/manage_user_plan.py set-plan --email user@example.com --plan trial
-```
-
-查看最近用户：
-
-```bash
-python scripts/manage_user_plan.py list --limit 20
-```
-
-说明：
-
-- 本脚本适用于中心化部署场景
-- 操作的是当前服务器上的 `data/zhongcaoji.db`
-- 后续接支付后，支付回调也可以复用同样的 plan 更新逻辑
-- 当前不接真实支付，不创建订单
-
-## 商业化入口预留
-当前预留套餐展示页：
-
-- 免费试用：每月 10 次
-- 个人月卡：9.9 元 / 月，100 次
-- 商家月卡：29.9 元 / 月，500 次
-- 次数包：9.9 元 / 100 次
-- 定制版 / 私有部署：联系开通
-
-说明：当前只是展示页和字段预留，不代表真实可支付，不创建订单，不接入支付回调。
-
-## 目录结构
-```text
-app/
-  routes/        页面和生成接口
-  services/      文案生成、笔记组织、图片合成
-  templates/     HTML 模板
-  static/        CSS、JS、上传和生成图片目录
-tests/           测试
-third_party/     后续预留外部海报引擎
-README.md
-requirements.txt
-```
-
-## 运行文件说明
-运行时上传图片和生成图片会写入：
-
-- `app/static/uploads/`
-- `app/static/generated/`
-
-这些运行文件已通过 `.gitignore` 排除，目录中的 `.gitkeep` 可保留进入 Git。
-
-## 健康检查
-```text
-GET /health
-```
-
-示例返回：
-
-```json
-{
-  "status": "ok",
-  "app": "zhongcaoji",
-  "version": "v0.4-1",
-  "uploads_dir_exists": true,
-  "generated_dir_exists": true,
-  "static_dir_exists": true,
-  "css_file_exists": true,
-  "js_file_exists": true,
-  "font_file_exists": true,
-  "font_path": "/usr/share/fonts/..."
-}
-```
-
-## 线上部署中文字体
-Pillow 生成图片时需要可用的中文字体，否则中文可能显示成方块。
-
-字体查找顺序：
-
-1. 优先使用项目内 `app/static/fonts/` 中的字体
-2. 其次使用 Linux 系统已安装的 CJK 字体
-3. 最后使用 Windows 本地开发环境字体
-
-如果 Render 环境没有中文字体，可以将开源授权字体放到 `app/static/fonts/`。推荐字体：
-
-- Noto Sans SC
-- Noto Sans CJK
-- Source Han Sans SC
-
-不要提交未经授权的商业字体。
-
-Render 当前如果 `/health` 返回 `font_file_exists=false`、`font_path=null`，请手动下载开源授权字体 `Noto Sans SC Regular`，优先放到：
-
-```text
-app/static/fonts/NotoSansSC-Regular.ttf
-```
-
-也支持：
-
-```text
-app/static/fonts/NotoSansSC-Regular.otf
-```
-
-不要把 zip 包或解压目录直接提交到 `app/static/fonts/`。
-
-放置后确认：
-
-```bash
-git status --short
-py -m pytest -q
-```
-
-然后提交并重新部署。部署后 `/health` 中应显示：
-
-```json
-{
-  "font_file_exists": true,
-  "font_path": "/opt/render/project/src/app/static/fonts/NotoSansSC-Regular.ttf"
-}
-```
-
-## 后续海报引擎扩展预留
-当前默认使用 Pillow 轻量模板生成图片，保持线上试用版稳定。
-
-- `app/services/poster_engine_adapter.py` 预留为海报生成适配层
-- `third_party/poster_engine/` 预留放置外部引擎或适配代码
-- 后续可以在 adapter 中接入 GitHub 公共海报 / 图像生成器
-- 后续可以把模板 JSON、图层布局、贴纸、背景等能力接入 adapter
-- 当前 v0.4-1 不实际接入外部引擎，不引入新依赖，不下载外部代码
-
-## 后续部署建议
-当前项目适合部署到 Render、Railway、腾讯云轻量服务器等平台。
-
-- 线上环境需要可写的 `app/static/uploads/` 和 `app/static/generated/` 目录
-- 当前没有登录和数据库，适合小范围试用
-- 免费平台可能会清理本地生成文件
-- 后续正式版应考虑对象存储或云存储
-
-## 试用注意事项
-- 当前是本地 MVP，不代表最终产品
-- 生成图片基于模板排版，商品图保持原样不重绘
-- 文案基于规则模板，不是大模型生成
-- 类目需要用户手动选择
-- 暂不自动发布小红书
-- 建议先用于小范围内部试用
-
-## 试用反馈建议
-- 测试不同类目商品
-- 反馈图片是否像小红书
-- 反馈文案是否贴合商品
-- 反馈下载 / 复制是否方便
-- 反馈希望增加的功能
+## /health 版本说明
+`/health` 返回的 `version` 优先读取 `APP_VERSION` 环境变量，代码默认值为 `v0.4-3`。
+如果 Render 线上 `/health` 仍显示旧版本，请检查 Render Environment 里的 `APP_VERSION`，改为 `v0.4-3` 或删除该环境变量后重新部署。
 
 ## 版本记录
-- v0.4-1：增强 `poster_engine_adapter.py`；新增 `POSTER_ENGINE_TYPE` 配置；当前默认使用 `pillow` 引擎；统一图片生成引擎入口；预留 `external_placeholder` 外部海报引擎占位；当前不接入外部 GitHub 项目，不增加大型依赖；当前上传、生成、下载、复制、编辑流程保持不变。
-- v0.3-7：新增中心化运营脚本 `scripts/manage_user_plan.py`；支持按邮箱查询用户套餐和额度；支持手动将用户 plan 设置为 `trial / personal / business`；修改 plan 后复用服务层同步 `monthly_quota`；`used_quota` 保留，不清空历史使用；用于没有后台和支付系统前的人工开通套餐；不做网页后台、不接真实支付、不做订单。
-- v0.3-6：`users.plan` 开始作为有效套餐状态；`trial / personal / business` 对应额度规则正式生效；trial 为 10 次 / 30 天，personal 为 100 次 / 30 天，business 为 500 次 / 30 天；读取额度时自动同步 `monthly_quota` 与当前 plan；plan 变更后保留 `used_quota`；`/pricing` 当前套餐卡会显示“当前套餐”；首页、结果页、我的记录页显示当前套餐名称和对应额度；仍不接真实支付、不创建订单、不做后台管理。
-- v0.3-5：新增套餐配置层；免费试用、个人月卡、商家月卡、次数包、定制版统一由配置驱动；注册默认额度从 trial 配置读取；额度周期从套餐配置读取；`/pricing` 页面改为配置驱动渲染；页面当前套餐名称从配置读取；当前仍不接真实支付、不创建订单、不做套餐升级生效。
-- v0.3-4：新增 `quota_reset_at` 月度额度周期字段；新注册用户 30 天后自动重置试用额度；旧用户自动补齐 `quota_reset_at`；读取额度时自动检查是否需要重置；首页、结果页、套餐页显示下次重置时间；`/me/records` 增加本月使用统计摘要；不接真实支付、不做订单、不做后台。
-- v0.3-3：新增 `generation_records` 生成记录表；每次生成成功后记录商品名、类目、内容类型、风格、消耗额度和时间；首页显示最近 5 条生成记录；新增 `/me/records` 我的生成记录页；为后续后台管理、套餐分析和用户行为统计做准备。
-- v0.3-2：新增试用额度控制；trial 用户默认每月 10 次；生成成功后 `used_quota + 1`；额度用完后拦截生成并引导查看套餐；首页显示剩余额度；结果页显示本次生成后的剩余额度；`/pricing` 保持套餐展示，不接真实支付。
-- v0.3-1：新增用户注册、登录、退出登录、密码哈希存储、SQLite 本地用户表；注册后自动开通 trial 试用状态，用户表预留套餐和额度字段；新增套餐展示页 `/pricing`，首页增加套餐 / 升级入口；生成接口需要登录；暂不接真实支付，暂不做额度扣减。
-- v0.1：本地 MVP，上传图片并生成图文
-- v0.1-1：上传预览、lightbox、复制反馈、图片模板优化
-- v0.1-2：结果页发布素材包、下载全部图片、文案卡片
-- v0.1-3：视觉收口、中文字体渲染修复
-- v0.1-4：试用版收口、商品名称 / 类目、类目化内容生成、错误提示
-- v0.1-5：上线前整理、部署准备、健康检查与环境说明
-- v0.1-6：Render 线上静态资源加载修复，健康检查增加静态文件状态
-- v0.1-7：Render 线上生成图片中文字体修复，健康检查增加字体诊断
-- v0.1-8：补充项目内开源中文字体接入说明，准备 Render 字体文件放置路径
-- v0.2-1：首页升级为线上试用版说明，版本文案改为在线试用版，结果页增加试用反馈入口和重新生成提示
-- v0.2-2：增强首页反馈入口，增强结果页反馈模板，增加生成效果不满意时的调整建议，补充适合谁和当前限制说明
-- v0.2-3：增强类目化文案质量，优化标题、正文、卖点、标签和评论引导，减少重复和跨类目错词
-- v0.2-4：标题候选、正文、标签、评论引导支持前端编辑，复制全部发布文案读取用户修改后的内容，优化结果页发布素材包展示
-- v0.2-5：增强生成图片的风格差异，清新简约、可爱手账、生活方式、干货清单、温柔日常拥有不同视觉主题，卖点图和总结图根据风格调整展示方式；修正版强化版式差异、去除后置叠层感，并优化食品场景文案兜底
-
-## Render 版本变量提醒
-`/health` 返回的 `version` 优先读取 `APP_VERSION` 环境变量，代码默认值为 `v0.4-1`。如果 Render 线上 `/health` 仍显示旧版本，例如 `v0.1-5`，请检查 Render Environment 里的 `APP_VERSION`，改为 `v0.4-1` 或删除该环境变量后重新部署。
+- v0.4-3：新增或增强商品细分类目识别；食品饮品细分为烘焙糕点、饮品冲泡、零食小吃、代餐轻食；美妆护肤细分为护肤、彩妆、护手霜/身体护理、随身补涂；家居日用细分为杯壶水杯、收纳整理、清洁用品、桌面/通勤好物；标题、正文、标签和图片卖点统一根据细分类目调整；继续使用规则引擎，不接大模型。
+- v0.4-2：增强内置 Pillow 图片模板质量，强化封面图、卖点图、清单总结图三类图片结构，增强五种风格差异，优化商品图占比、标题层级、标签和轻量装饰。
+- v0.4-1：增强 `poster_engine_adapter.py`，新增 `POSTER_ENGINE_TYPE` 配置，统一图片生成引擎入口，预留 `external_placeholder`。

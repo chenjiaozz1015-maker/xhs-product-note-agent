@@ -1,8 +1,17 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from pathlib import Path
+
 from PIL import Image, ImageDraw, ImageFont
+
 from app.config import FONTS_DIR, GENERATED_DIR, STATIC_DIR
+from app.services.category_profile import (
+    GENERAL_SUBCATEGORY,
+    MAIN_CATEGORY_LABELS,
+    ProductProfile,
+    detect_product_profile,
+    get_profile_copy,
+)
 
 
 PROJECT_CJK_FONT_PATHS = (
@@ -11,74 +20,64 @@ PROJECT_CJK_FONT_PATHS = (
     FONTS_DIR / "NotoSansCJK-Regular.ttc",
     FONTS_DIR / "SourceHanSansSC-Regular.otf",
 )
-
 LINUX_CJK_FONT_PATHS = (
     Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
-    Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.otf"),
-    Path("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc"),
     Path("/usr/share/fonts/truetype/noto/NotoSansSC-Regular.ttf"),
-    Path("/usr/share/fonts/truetype/wqy/wqy-microhei.ttc"),
-    Path("/usr/share/fonts/truetype/arphic/ukai.ttc"),
 )
-
 WINDOWS_CJK_FONT_PATHS = (
     Path("C:/Windows/Fonts/msyh.ttc"),
     Path("C:/Windows/Fonts/simhei.ttf"),
-    Path("C:/Windows/Fonts/simsun.ttc"),
 )
-
 CJK_FONT_PATHS = PROJECT_CJK_FONT_PATHS + LINUX_CJK_FONT_PATHS + WINDOWS_CJK_FONT_PATHS
-_FONT_STATUS_PRINTED = False
-
 
 STYLE_THEMES = {
     "清新简约": {
         "background": (248, 250, 248, 255),
-        "card": (255, 255, 255, 246),
+        "card": (255, 255, 255, 248),
         "photo_bg": (239, 247, 241, 255),
         "accent": (91, 158, 132, 255),
         "accent_soft": (222, 242, 232, 255),
         "text": (39, 48, 44, 255),
         "muted": (98, 120, 110, 255),
         "border": (218, 232, 224, 255),
-        "radius": 30,
+        "radius": 28,
         "decoration": "minimal",
         "point_label": "dot",
         "summary_marker": "label",
-        "cover_badge": "好物推荐",
-        "cover_note": "简洁排版 · 一键发布",
+        "cover_badge": "真实分享",
+        "cover_note": "留白更舒服，标题更清楚",
     },
     "可爱手账": {
         "background": (255, 246, 239, 255),
-        "card": (255, 255, 255, 246),
+        "card": (255, 255, 255, 248),
         "photo_bg": (255, 235, 225, 255),
         "accent": (255, 125, 148, 255),
         "accent_soft": (255, 230, 236, 255),
         "text": (64, 48, 47, 255),
         "muted": (151, 96, 92, 255),
         "border": (248, 209, 199, 255),
-        "radius": 46,
+        "radius": 36,
         "decoration": "stickers",
         "point_label": "sticker",
         "summary_marker": "sticker",
-        "cover_badge": "今日分享",
-        "cover_note": "手账感小卡片",
+        "cover_badge": "今日好物",
+        "cover_note": "贴纸感更轻一点，商品更清楚",
     },
     "生活方式": {
         "background": (246, 242, 235, 255),
-        "card": (255, 254, 250, 246),
+        "card": (255, 254, 250, 248),
         "photo_bg": (236, 229, 219, 255),
         "accent": (142, 113, 82, 255),
         "accent_soft": (235, 222, 204, 255),
         "text": (45, 41, 36, 255),
         "muted": (116, 105, 92, 255),
         "border": (224, 214, 200, 255),
-        "radius": 26,
+        "radius": 24,
         "decoration": "magazine",
         "point_label": "line",
         "summary_marker": "label",
-        "cover_badge": "生活好物",
-        "cover_note": "最近常用的日常分享",
+        "cover_badge": "生活方式",
+        "cover_note": "更像日常场景里的杂志标题",
     },
     "干货清单": {
         "background": (247, 249, 246, 255),
@@ -89,30 +88,33 @@ STYLE_THEMES = {
         "text": (34, 45, 40, 255),
         "muted": (78, 105, 94, 255),
         "border": (194, 218, 204, 255),
-        "radius": 22,
+        "radius": 20,
         "decoration": "checklist",
         "point_label": "number",
         "summary_marker": "check",
-        "cover_badge": "种草清单",
-        "cover_note": "这几点值得看",
+        "cover_badge": "清单分享",
+        "cover_note": "01 02 03 更适合直接看重点",
     },
     "温柔日常": {
         "background": (255, 248, 241, 255),
-        "card": (255, 253, 249, 246),
+        "card": (255, 253, 249, 248),
         "photo_bg": (255, 239, 229, 255),
         "accent": (224, 143, 132, 255),
         "accent_soft": (255, 232, 226, 255),
         "text": (64, 50, 45, 255),
         "muted": (132, 97, 88, 255),
         "border": (244, 215, 204, 255),
-        "radius": 40,
-        "decoration": "soft_dots",
+        "radius": 34,
+        "decoration": "soft",
         "point_label": "soft",
         "summary_marker": "soft",
         "cover_badge": "温柔日常",
-        "cover_note": "慢慢用下来还挺喜欢",
+        "cover_note": "奶油色更柔和，适合日常分享",
     },
 }
+
+
+_FONT_STATUS_PRINTED = False
 
 
 def get_style_theme(style: str) -> dict:
@@ -133,14 +135,12 @@ def get_cjk_font_path() -> Path | None:
 
 def load_font(size: int) -> ImageFont.ImageFont:
     global _FONT_STATUS_PRINTED
-
     font_path = get_cjk_font_path()
     if font_path:
         if not _FONT_STATUS_PRINTED:
             print(f"Using font: {font_path}")
             _FONT_STATUS_PRINTED = True
         return ImageFont.truetype(str(font_path), size)
-
     if not _FONT_STATUS_PRINTED:
         print("No CJK font found, Chinese text may render incorrectly.")
         _FONT_STATUS_PRINTED = True
@@ -151,7 +151,6 @@ def _load_source_image(input_image_path: str) -> Image.Image:
     source_path = Path(input_image_path)
     if source_path.exists() and source_path.is_file():
         return Image.open(source_path).convert("RGBA")
-
     placeholder_path = STATIC_DIR / "template_assets" / "placeholder.png"
     if not placeholder_path.exists():
         placeholder = Image.new("RGBA", (1080, 1440), (248, 240, 225, 255))
@@ -159,14 +158,9 @@ def _load_source_image(input_image_path: str) -> Image.Image:
     return Image.open(placeholder_path).convert("RGBA")
 
 
-def _draw_text(draw: ImageDraw.ImageDraw, text: str, xy: tuple[int, int], font: ImageFont.ImageFont, fill: tuple[int, int, int, int], anchor: str = "lt") -> None:
-    draw.text(xy, text, font=font, fill=fill, anchor=anchor)
-
-
 def _fit_image(image: Image.Image, size: tuple[int, int]) -> Image.Image:
     fitted = image.copy()
     fitted.thumbnail(size, Image.Resampling.LANCZOS)
-
     canvas = Image.new("RGBA", size, (255, 255, 255, 0))
     x = (size[0] - fitted.width) // 2
     y = (size[1] - fitted.height) // 2
@@ -174,213 +168,153 @@ def _fit_image(image: Image.Image, size: tuple[int, int]) -> Image.Image:
     return canvas
 
 
-def _draw_theme_decoration(draw: ImageDraw.ImageDraw, theme: dict, width: int, height: int) -> None:
-    accent = theme["accent"]
-    soft = theme["accent_soft"]
-    muted = theme["muted"]
-    decoration = theme["decoration"]
-
-    if decoration == "stickers":
-        draw.rounded_rectangle((770, 98, 970, 152), radius=18, fill=soft, outline=theme["border"], width=2)
-        draw.rectangle((792, 82, 898, 112), fill=(255, 218, 126, 210))
-        for x, y in [(90, 112), (956, 250), (142, 1270), (922, 1192)]:
-            draw.ellipse((x, y, x + 24, y + 24), fill=accent)
-    elif decoration == "magazine":
-        draw.line((88, 112, 330, 112), fill=accent, width=5)
-        draw.line((750, height - 138, 988, height - 138), fill=theme["border"], width=4)
-        draw.rectangle((916, 86, 958, 188), fill=soft)
-    elif decoration == "checklist":
-        for y in (116, 156, 196):
-            draw.line((848, y, 982, y), fill=theme["border"], width=4)
-            draw.rounded_rectangle((800, y - 14, 826, y + 12), radius=6, outline=accent, width=3)
-        draw.line((118, height - 112, 962, height - 112), fill=theme["border"], width=3)
-    elif decoration == "soft_dots":
-        for x, y, r in [(82, 120, 18), (944, 132, 26), (892, 1258, 18), (134, 1210, 12)]:
-            draw.ellipse((x, y, x + r, y + r), fill=soft)
-    else:
-        draw.rounded_rectangle((886, 98, 960, 134), radius=18, fill=soft)
-        draw.ellipse((104, 118, 132, 146), fill=soft)
+def _draw_text(draw: ImageDraw.ImageDraw, text: str, xy: tuple[int, int], font: ImageFont.ImageFont, fill: tuple[int, int, int, int]) -> None:
+    draw.text(xy, text, font=font, fill=fill)
 
 
-def _draw_point_label(draw: ImageDraw.ImageDraw, theme: dict, box: tuple[int, int, int, int], number: str, font: ImageFont.ImageFont) -> int:
-    accent = theme["accent"]
-    soft = theme["accent_soft"]
-    text = theme["text"]
-    label_style = theme["point_label"]
-
-    if label_style == "number":
-        _draw_text(draw, number, (box[0] + 34, box[1] + 44), font, accent)
-        draw.line((box[0] + 34, box[1] + 88, box[0] + 92, box[1] + 88), fill=accent, width=4)
-        return box[0] + 130
-    if label_style == "sticker":
-        draw.rounded_rectangle((box[0] + 24, box[1] + 34, box[0] + 184, box[1] + 96), radius=20, fill=soft, outline=theme["border"], width=2)
-        _draw_text(draw, f"喜欢点 {int(number)}", (box[0] + 40, box[1] + 48), font, accent)
-        return box[0] + 214
-    if label_style == "line":
-        draw.line((box[0] + 34, box[1] + 42, box[0] + 34, box[1] + 104), fill=accent, width=6)
-        _draw_text(draw, number, (box[0] + 58, box[1] + 50), font, text)
-        return box[0] + 126
-    if label_style == "soft":
-        draw.ellipse((box[0] + 30, box[1] + 38, box[0] + 94, box[1] + 102), fill=soft)
-        _draw_text(draw, number, (box[0] + 46, box[1] + 50), font, accent)
-        return box[0] + 124
-
-    draw.ellipse((box[0] + 30, box[1] + 38, box[0] + 94, box[1] + 102), fill=accent)
-    _draw_text(draw, number, (box[0] + 45, box[1] + 50), font, (255, 255, 255, 255))
-    return box[0] + 124
+def _draw_pill(draw: ImageDraw.ImageDraw, text: str, xy: tuple[int, int], font: ImageFont.ImageFont, fill: tuple[int, int, int, int], text_fill: tuple[int, int, int, int], outline: tuple[int, int, int, int]) -> tuple[int, int, int, int]:
+    bbox = draw.textbbox((0, 0), text, font=font)
+    width = (bbox[2] - bbox[0]) + 36
+    height = (bbox[3] - bbox[1]) + 20
+    rect = (xy[0], xy[1], xy[0] + width, xy[1] + height)
+    draw.rounded_rectangle(rect, radius=max(16, height // 2), fill=fill, outline=outline, width=2)
+    draw.text((xy[0] + 18, xy[1] + 8), text, font=font, fill=text_fill)
+    return rect
 
 
-def _summary_label(theme: dict, label: str) -> str:
-    if theme["summary_marker"] == "check":
-        return f"✓ {label}"
-    if theme["summary_marker"] == "sticker":
-        return f"✦ {label}"
-    if theme["summary_marker"] == "soft":
-        return f"· {label}"
-    return label
+def _clip_text(text: str, limit: int, fallback: str) -> str:
+    value = (text or "").replace("\n", " ").strip()
+    return (value or fallback)[:limit]
+
+
+def _wrap_text(text: str, line_length: int, max_lines: int = 2) -> list[str]:
+    content = (text or "").replace("\n", " ").strip()
+    if not content:
+        return []
+    lines: list[str] = []
+    remaining = content
+    while remaining and len(lines) < max_lines:
+        if len(remaining) <= line_length:
+            lines.append(remaining)
+            break
+        lines.append(remaining[:line_length])
+        remaining = remaining[line_length:]
+    if remaining and len(lines) == max_lines:
+        lines[-1] = lines[-1][: max(0, line_length - 1)] + "…"
+    return lines
+
+
+def _profile_from_visual_inputs(category: str, product_name: str, description: str) -> ProductProfile:
+    return detect_product_profile(product_name, category, description)
+
+
+def _resolve_product_context(category: str, product_name: str, description: str) -> str:
+    return _profile_from_visual_inputs(category, product_name, description).sub_category
+
+
+def _default_profile_for_category(category: str) -> ProductProfile:
+    main_category = next((key for key, label in MAIN_CATEGORY_LABELS.items() if label == category), "other")
+    sub_category = GENERAL_SUBCATEGORY.get(main_category, "general")
+    copy_config = get_profile_copy(
+        ProductProfile(main_category=main_category, sub_category=sub_category, category_label=MAIN_CATEGORY_LABELS[main_category], keywords=(), tone_tags=())
+    )
+    return ProductProfile(
+        main_category=main_category,
+        sub_category=sub_category,
+        category_label=MAIN_CATEGORY_LABELS[main_category],
+        keywords=(),
+        tone_tags=tuple(copy_config.get("tone_tags", [])),
+    )
+
+
+def _copy_from_context(category: str, product_context: str = "default") -> dict:
+    if product_context != "default":
+        main_category = next((key for key, label in MAIN_CATEGORY_LABELS.items() if label == category), "other")
+        profile = ProductProfile(
+            main_category=main_category,
+            sub_category=product_context,
+            category_label=category or MAIN_CATEGORY_LABELS[main_category],
+            keywords=(),
+            tone_tags=(),
+        )
+        return get_profile_copy(profile)
+    return get_profile_copy(_default_profile_for_category(category))
+
+
+def _category_tags(category: str, content_type: str, product_context: str = "default") -> list[str]:
+    return list(_copy_from_context(category, product_context).get("tone_tags", ["真实分享", "日常好物", "轻松种草"]))[:3]
+
+
+def _point_detail_text(category: str, index: int, product_context: str = "default") -> str:
+    values = list(_copy_from_context(category, product_context).get("point_details", ["更适合放进日常场景", "一眼看懂推荐重点", "适合直接做真实分享"]))
+    return values[min(index, len(values) - 1)]
+
+
+def _summary_label_text(category: str, product_context: str = "default") -> list[str]:
+    values = list(_copy_from_context(category, product_context).get("summary_labels", ["适合场景", "推荐理由", "一眼看懂"]))
+    if len(values) < 3:
+        values.extend(["适合场景", "推荐理由", "一眼看懂"][len(values):3])
+    return values[:3]
 
 
 def _get_style_layout(decoration: str) -> dict:
     layouts = {
         "minimal": {
-            "cover_photo_box": (92, 108, 988, 850),
-            "cover_photo_size": (830, 700),
-            "cover_text_box": (80, 900, 1000, 1338),
-            "cover_badge_pos": (146, 140),
-            "cover_text_badge_pos": (146, 980),
-            "cover_title_pos": (116, 1070),
-            "cover_subtitle_pos": (118, 1180),
-            "cover_note_pos": (118, 1250),
-            "points_photo_box": (88, 92, 992, 620),
-            "points_photo_size": (820, 470),
-            "points_heading_box": (92, 665, 988, 755),
-            "points_heading_pos": (126, 683),
-            "point_cards": [
-                ((116, 820, 964, 960), "01"),
-                ((116, 1000, 964, 1140), "02"),
-                ((116, 1180, 964, 1320), "03"),
-            ],
-            "summary_photo_box": (250, 330, 830, 850),
-            "summary_photo_size": (560, 500),
-            "summary_cards": [
-                ((92, 930, 988, 1050), "适合谁"),
-                ((92, 1085, 988, 1205), "推荐理由"),
-                ((92, 1240, 988, 1360), "一句话总结"),
-            ],
+            "cover_photo_box": (86, 110, 994, 828),
+            "cover_photo_size": (820, 660),
+            "cover_text_box": (86, 878, 994, 1332),
+            "point_photo_box": (120, 110, 960, 560),
+            "point_photo_size": (720, 360),
+            "point_cards": [((118, 760, 962, 902), "01"), ((118, 944, 962, 1086), "02"), ((118, 1128, 962, 1270), "03")],
+            "summary_photo_box": (228, 300, 852, 860),
+            "summary_photo_size": (540, 420),
         },
         "stickers": {
-            "cover_photo_box": (122, 180, 958, 850),
-            "cover_photo_size": (740, 600),
-            "cover_text_box": (86, 905, 994, 1342),
-            "cover_badge_pos": (144, 130),
-            "cover_text_badge_pos": (146, 970),
-            "cover_title_pos": (116, 1062),
-            "cover_subtitle_pos": (118, 1176),
-            "cover_note_pos": (118, 1254),
-            "points_photo_box": (104, 96, 976, 540),
-            "points_photo_size": (720, 390),
-            "points_heading_box": (112, 590, 968, 678),
-            "points_heading_pos": (150, 608),
-            "point_cards": [
-                ((92, 735, 900, 880), "01"),
-                ((178, 925, 988, 1070), "02"),
-                ((92, 1115, 900, 1260), "03"),
-            ],
-            "summary_photo_box": (280, 330, 800, 810),
-            "summary_photo_size": (500, 450),
-            "summary_cards": [
-                ((112, 900, 968, 1028), "适合谁"),
-                ((112, 1070, 968, 1198), "推荐理由"),
-                ((112, 1240, 968, 1368), "一句话总结"),
-            ],
+            "cover_photo_box": (120, 170, 960, 820),
+            "cover_photo_size": (720, 540),
+            "cover_text_box": (86, 875, 994, 1336),
+            "point_photo_box": (132, 120, 948, 530),
+            "point_photo_size": (680, 320),
+            "point_cards": [((102, 748, 978, 892), "01"), ((124, 930, 954, 1078), "02"), ((104, 1114, 972, 1262), "03")],
+            "summary_photo_box": (250, 320, 830, 840),
+            "summary_photo_size": (500, 390),
         },
         "magazine": {
-            "cover_photo_box": (72, 96, 1008, 920),
-            "cover_photo_size": (900, 790),
-            "cover_text_box": (96, 930, 984, 1328),
-            "cover_badge_pos": (128, 122),
-            "cover_text_badge_pos": (132, 990),
-            "cover_title_pos": (128, 1080),
-            "cover_subtitle_pos": (130, 1184),
-            "cover_note_pos": (130, 1256),
-            "points_photo_box": (88, 92, 992, 720),
-            "points_photo_size": (880, 580),
-            "points_heading_box": (100, 760, 980, 840),
-            "points_heading_pos": (132, 776),
-            "point_cards": [
-                ((110, 900, 470, 1298), "01"),
-                ((510, 900, 970, 1018), "02"),
-                ((510, 1060, 970, 1298), "03"),
-            ],
-            "summary_photo_box": (90, 330, 990, 880),
-            "summary_photo_size": (860, 520),
-            "summary_cards": [
-                ((92, 945, 988, 1065), "适合谁"),
-                ((92, 1102, 988, 1222), "推荐理由"),
-                ((92, 1259, 988, 1379), "一句话总结"),
-            ],
+            "cover_photo_box": (74, 96, 1006, 920),
+            "cover_photo_size": (860, 730),
+            "cover_text_box": (90, 952, 990, 1328),
+            "point_photo_box": (86, 92, 992, 700),
+            "point_photo_size": (840, 520),
+            "point_cards": [((96, 780, 984, 918), "01"), ((96, 958, 984, 1096), "02"), ((96, 1136, 984, 1274), "03")],
+            "summary_photo_box": (100, 320, 980, 860),
+            "summary_photo_size": (800, 460),
         },
         "checklist": {
-            "cover_photo_box": (118, 300, 962, 860),
-            "cover_photo_size": (800, 520),
-            "cover_text_box": (86, 86, 994, 278),
-            "cover_badge_pos": (134, 116),
-            "cover_text_badge_pos": (118, 930),
-            "cover_title_pos": (118, 1010),
-            "cover_subtitle_pos": (120, 1122),
-            "cover_note_pos": (120, 1200),
-            "points_photo_box": (104, 92, 976, 470),
-            "points_photo_size": (760, 340),
-            "points_heading_box": (100, 510, 980, 600),
-            "points_heading_pos": (132, 528),
-            "point_cards": [
-                ((100, 655, 980, 825), "01"),
-                ((100, 880, 980, 1050), "02"),
-                ((100, 1105, 980, 1275), "03"),
-            ],
-            "summary_photo_box": (112, 300, 968, 705),
-            "summary_photo_size": (780, 360),
-            "summary_cards": [
-                ((100, 780, 980, 930), "适合谁"),
-                ((100, 970, 980, 1120), "推荐理由"),
-                ((100, 1160, 980, 1310), "一句话总结"),
-            ],
+            "cover_photo_box": (116, 280, 964, 850),
+            "cover_photo_size": (760, 460),
+            "cover_text_box": (86, 90, 994, 246),
+            "point_photo_box": (110, 100, 970, 470),
+            "point_photo_size": (760, 280),
+            "point_cards": [((92, 724, 988, 870), "01"), ((92, 910, 988, 1056), "02"), ((92, 1096, 988, 1242), "03")],
+            "summary_photo_box": (120, 290, 960, 700),
+            "summary_photo_size": (740, 320),
         },
-        "soft_dots": {
-            "cover_photo_box": (114, 240, 966, 870),
-            "cover_photo_size": (800, 580),
-            "cover_text_box": (92, 110, 988, 232),
-            "cover_badge_pos": (140, 132),
-            "cover_text_badge_pos": (122, 950),
-            "cover_title_pos": (116, 1028),
-            "cover_subtitle_pos": (118, 1140),
-            "cover_note_pos": (118, 1220),
-            "points_photo_box": (120, 110, 960, 560),
-            "points_photo_size": (760, 400),
-            "points_heading_box": (116, 615, 964, 700),
-            "points_heading_pos": (154, 632),
-            "point_cards": [
-                ((126, 760, 954, 902), "01"),
-                ((126, 945, 954, 1087), "02"),
-                ((126, 1130, 954, 1272), "03"),
-            ],
-            "summary_photo_box": (238, 320, 842, 830),
-            "summary_photo_size": (580, 480),
-            "summary_cards": [
-                ((108, 920, 972, 1044), "适合谁"),
-                ((108, 1085, 972, 1209), "推荐理由"),
-                ((108, 1250, 972, 1374), "一句话总结"),
-            ],
+        "soft": {
+            "cover_photo_box": (110, 220, 970, 850),
+            "cover_photo_size": (780, 540),
+            "cover_text_box": (92, 104, 988, 236),
+            "point_photo_box": (126, 116, 954, 560),
+            "point_photo_size": (720, 360),
+            "point_cards": [((126, 756, 954, 900), "01"), ((118, 944, 962, 1092), "02"), ((126, 1132, 954, 1276), "03")],
+            "summary_photo_box": (230, 310, 850, 830),
+            "summary_photo_size": (560, 420),
         },
     }
     return layouts.get(decoration, layouts["minimal"])
 
 
-def _box_centered_position(box: tuple[int, int, int, int], image: Image.Image, y_offset: int = 0) -> tuple[int, int]:
-    return (
-        box[0] + (box[2] - box[0] - image.width) // 2,
-        box[1] + (box[3] - box[1] - image.height) // 2 + y_offset,
-    )
+def _box_centered_position(box: tuple[int, int, int, int], image: Image.Image) -> tuple[int, int]:
+    return (box[0] + (box[2] - box[0] - image.width) // 2, box[1] + (box[3] - box[1] - image.height) // 2)
 
 
 def _prepare_cover_photo(src: Image.Image, theme: dict, size: tuple[int, int]) -> Image.Image:
@@ -388,6 +322,115 @@ def _prepare_cover_photo(src: Image.Image, theme: dict, size: tuple[int, int]) -
     if theme["decoration"] == "stickers":
         return photo.rotate(-2, resample=Image.Resampling.BICUBIC, expand=True)
     return photo
+
+
+def _render_variants(
+    input_image_path: str,
+    output_dir: str | None,
+    title: str,
+    subtitle: str,
+    style: str,
+    selling_points: list[str] | None,
+    summary_title: str,
+    suitable_for: str,
+    recommend_reason: str,
+    summary_sentence: str,
+    category: str,
+    content_type: str,
+    product_name: str,
+    enlarge: bool,
+) -> list[str]:
+    output_dir_path = Path(output_dir or GENERATED_DIR)
+    output_dir_path.mkdir(parents=True, exist_ok=True)
+
+    src = _load_source_image(input_image_path)
+    width, height = 1080, 1440
+    theme = get_style_theme(style)
+    layout = _get_style_layout(theme["decoration"])
+    product_context = _resolve_product_context(category, product_name, f"{title} {subtitle}")
+    cover_tags = _category_tags(category, content_type, product_context)
+    summary_labels = _summary_label_text(category, product_context)
+
+    font_cover = load_font(72)
+    font_title = load_font(50)
+    font_sub = load_font(32)
+    font_small = load_font(26)
+    font_tiny = load_font(22)
+    title_lines = _wrap_text(_clip_text(title, 22, "种草机"), 10, 2)
+    subtitle_text = _clip_text(subtitle, 28, "真实分享的小红书素材")
+    points = list(selling_points or ["日常好用", "质感舒服", "适合轻分享"])[:3]
+    while len(points) < 3:
+        points.append("适合轻分享")
+
+    cover_photo = _prepare_cover_photo(src, theme, layout["cover_photo_size"])
+    cover = Image.new("RGBA", (width, height), theme["background"])
+    cover_draw = ImageDraw.Draw(cover)
+    cover_draw.rounded_rectangle((54, 60, 1026, 1378), radius=theme["radius"] + 8, fill=theme["card"])
+    cover_draw.rounded_rectangle(layout["cover_photo_box"], radius=theme["radius"], fill=theme["photo_bg"], outline=theme["border"], width=2)
+    cover.alpha_composite(cover_photo, _box_centered_position(layout["cover_photo_box"], cover_photo))
+    cover_draw.rounded_rectangle(layout["cover_text_box"], radius=theme["radius"], fill=(255, 255, 255, 250), outline=theme["border"], width=2)
+    _draw_pill(cover_draw, theme["cover_badge"], (112, 112), font_tiny, theme["accent"], (255, 255, 255, 255), theme["accent"])
+    y = layout["cover_text_box"][1] + 44
+    for line in title_lines:
+        _draw_text(cover_draw, line, (122, y), font_cover, theme["text"])
+        y += 82
+    _draw_text(cover_draw, subtitle_text, (124, y + 8), font_sub, theme["muted"])
+    _draw_text(cover_draw, theme["cover_note"], (124, y + 62), font_small, theme["muted"])
+    pill_x = 124
+    for tag in cover_tags[:2]:
+        pill = _draw_pill(cover_draw, tag, (pill_x, layout["cover_text_box"][3] - 84), font_tiny, theme["accent_soft"], theme["accent"], theme["border"])
+        pill_x = pill[2] + 14
+
+    point_photo_size = layout["point_photo_size"]
+    if enlarge:
+        point_photo_size = (point_photo_size[0] + 60, point_photo_size[1] + 60)
+    points_photo = _fit_image(src, point_photo_size)
+    points_img = Image.new("RGBA", (width, height), theme["background"])
+    points_draw = ImageDraw.Draw(points_img)
+    points_draw.rounded_rectangle((50, 50, 1030, 1390), radius=theme["radius"] + 8, fill=theme["card"])
+    points_draw.rounded_rectangle(layout["point_photo_box"], radius=theme["radius"], fill=theme["photo_bg"], outline=theme["border"], width=2)
+    points_img.alpha_composite(points_photo, _box_centered_position(layout["point_photo_box"], points_photo))
+    _draw_text(points_draw, "这 3 点更容易种草", (126, 612), font_title, theme["text"])
+    _draw_text(points_draw, "短标题 + 一句说明，读起来更像真实卖点", (128, 674), font_small, theme["muted"])
+    for index, (box, number) in enumerate(layout["point_cards"]):
+        points_draw.rounded_rectangle(box, radius=max(18, theme["radius"] - 4), fill=(255, 255, 255, 255), outline=theme["border"], width=2)
+        _draw_pill(points_draw, number, (box[0] + 24, box[1] + 24), font_tiny, theme["accent_soft"], theme["accent"], theme["border"])
+        _draw_text(points_draw, _clip_text(points[index], 14, "日常好物"), (box[0] + 130, box[1] + 34), font_title, theme["text"])
+        _draw_text(points_draw, _point_detail_text(category, index, product_context), (box[0] + 130, box[1] + 86), font_small, theme["muted"])
+        _draw_pill(points_draw, cover_tags[min(index, len(cover_tags) - 1)], (box[2] - 184, box[1] + 28), font_tiny, theme["accent_soft"], theme["accent"], theme["border"])
+
+    summary_photo_size = layout["summary_photo_size"]
+    if enlarge:
+        summary_photo_size = (summary_photo_size[0] + 48, summary_photo_size[1] + 48)
+    summary_photo = _fit_image(src, summary_photo_size)
+    summary = Image.new("RGBA", (width, height), theme["background"])
+    summary_draw = ImageDraw.Draw(summary)
+    summary_draw.rounded_rectangle((50, 50, 1030, 1390), radius=theme["radius"] + 8, fill=theme["card"])
+    _draw_pill(summary_draw, "最后一页更适合总结", (102, 96), font_small, theme["accent_soft"], theme["muted"], theme["border"])
+    _draw_text(summary_draw, _clip_text(summary_title, 22, "适合日常轻分享"), (112, 188), font_title, theme["text"])
+    summary_draw.rounded_rectangle(layout["summary_photo_box"], radius=theme["radius"], fill=theme["photo_bg"], outline=theme["border"], width=2)
+    summary.alpha_composite(summary_photo, _box_centered_position(layout["summary_photo_box"], summary_photo))
+    summary_boxes = [(110, 920, 970, 1048), (110, 1088, 970, 1216), (110, 1256, 970, 1384)]
+    summary_texts = [
+        _clip_text(suitable_for, 18, "喜欢轻分享的人"),
+        _clip_text(recommend_reason, 22, "适合日常使用"),
+        _clip_text(summary_sentence, 22, "一眼看懂推荐点"),
+    ]
+    for index, box in enumerate(summary_boxes):
+        summary_draw.rounded_rectangle(box, radius=max(18, theme["radius"] - 6), fill=(255, 255, 255, 255), outline=theme["border"], width=2)
+        _draw_pill(summary_draw, summary_labels[index], (box[0] + 24, box[1] + 20), font_tiny, theme["accent_soft"], theme["accent"], theme["border"])
+        _draw_text(summary_draw, summary_texts[index], (box[0] + 28, box[1] + 72), font_small, theme["text"])
+        _draw_text(summary_draw, "一眼看懂推荐点", (box[0] + 28, box[1] + 104), font_tiny, theme["muted"])
+
+    variants = [cover, points_img, summary]
+    paths = []
+    source_stem = Path(input_image_path).stem or "sample"
+    for idx, variant in enumerate(variants, start=1):
+        suffix = ["cover", "points", "summary"][idx - 1]
+        out_path = output_dir_path / f"poster_{idx}_{source_stem}_{suffix}.png"
+        variant.save(out_path)
+        paths.append(f"/static/generated/{out_path.name}")
+    return paths
 
 
 def compose_posters(
@@ -402,96 +445,52 @@ def compose_posters(
     recommend_reason: str = "",
     summary_sentence: str = "",
 ) -> list[str]:
-    output_dir_path = Path(output_dir or GENERATED_DIR)
-    output_dir_path.mkdir(parents=True, exist_ok=True)
+    return _render_variants(
+        input_image_path,
+        output_dir,
+        title,
+        subtitle,
+        style,
+        selling_points,
+        summary_title,
+        suitable_for,
+        recommend_reason,
+        summary_sentence,
+        "其他好物",
+        "",
+        "",
+        False,
+    )
 
-    src = _load_source_image(input_image_path)
-    width, height = 1080, 1440
-    theme = get_style_theme(style)
-    radius = theme["radius"]
-    layout = _get_style_layout(theme["decoration"])
 
-    font_cover_title = load_font(68)
-    font_title = load_font(58)
-    font_sub = load_font(36)
-    font_small = load_font(30)
-    font_card = load_font(38)
-    font_card_small = load_font(32)
-
-    short_title = (title or "种草机")[:18].replace("\n", " ")
-    short_subtitle = (subtitle or "真实体验感 · 小红书发布素材")[:22].replace("\n", " ")
-    point_texts = (selling_points or ["日常好用", "质感舒服", "适合轻分享"])[:3]
-    while len(point_texts) < 3:
-        point_texts.append("适合轻分享")
-    summary_title_text = (summary_title or "适合日常轻分享")[:18].replace("\n", " ")
-    suitable_for_text = (suitable_for or "喜欢轻分享的人")[:16].replace("\n", " ")
-    recommend_reason_text = (recommend_reason or "好看、好用、日常容易带")[:18].replace("\n", " ")
-    summary_sentence_text = (summary_sentence or "很值得试试")[:18].replace("\n", " ")
-
-    cover_photo = _prepare_cover_photo(src, theme, layout["cover_photo_size"])
-    cover = Image.new("RGBA", (width, height), theme["background"])
-    cover_draw = ImageDraw.Draw(cover)
-    cover_draw.rounded_rectangle((56, 60, 1024, 1370), radius=radius + 10, fill=theme["card"])
-    _draw_theme_decoration(cover_draw, theme, width, height)
-    cover_photo_box = layout["cover_photo_box"]
-    cover_text_box = layout["cover_text_box"]
-    cover_draw.rounded_rectangle(cover_photo_box, radius=radius, fill=theme["photo_bg"], outline=theme["border"], width=2)
-    cover.alpha_composite(cover_photo, _box_centered_position(cover_photo_box, cover_photo))
-    cover_draw.rounded_rectangle(cover_text_box, radius=radius, fill=(255, 255, 255, 252), outline=theme["border"], width=2)
-    badge_x, badge_y = layout["cover_badge_pos"]
-    cover_draw.rounded_rectangle((badge_x - 30, badge_y - 14, badge_x + 220, badge_y + 48), radius=26, fill=theme["accent"])
-    text_badge_x, text_badge_y = layout["cover_text_badge_pos"]
-    cover_draw.rounded_rectangle((text_badge_x - 30, text_badge_y - 16, text_badge_x + 220, text_badge_y + 54), radius=26, fill=theme["accent"])
-    _draw_text(cover_draw, theme["cover_badge"], (badge_x, badge_y), font_small, (255, 255, 255, 255))
-    _draw_text(cover_draw, theme["cover_badge"], (text_badge_x, text_badge_y), font_small, (255, 255, 255, 255))
-    _draw_text(cover_draw, short_title, layout["cover_title_pos"], font_cover_title, theme["text"])
-    _draw_text(cover_draw, short_subtitle, layout["cover_subtitle_pos"], font_sub, theme["muted"])
-    _draw_text(cover_draw, theme["cover_note"], layout["cover_note_pos"], font_small, theme["muted"])
-
-    points_photo = _fit_image(src, layout["points_photo_size"])
-    points = Image.new("RGBA", (width, height), theme["background"])
-    points_draw = ImageDraw.Draw(points)
-    points_draw.rounded_rectangle((48, 48, 1032, 1392), radius=radius + 10, fill=theme["card"])
-    _draw_theme_decoration(points_draw, theme, width, height)
-    points_photo_box = layout["points_photo_box"]
-    points_draw.rounded_rectangle(points_photo_box, radius=radius, fill=theme["photo_bg"], outline=theme["border"], width=2)
-    points.alpha_composite(points_photo, _box_centered_position(points_photo_box, points_photo))
-    points_heading = "3 个真实体验点" if theme["decoration"] == "checklist" else "我喜欢它的 3 个点"
-    points_draw.rounded_rectangle(layout["points_heading_box"], radius=radius, fill=theme["accent_soft"], outline=theme["border"], width=2)
-    _draw_text(points_draw, points_heading, layout["points_heading_pos"], font_title, theme["text"])
-
-    for index, (box, number) in enumerate(layout["point_cards"]):
-        text = point_texts[index][:18]
-        points_draw.rounded_rectangle(box, radius=max(18, radius - 4), fill=(255, 255, 255, 255), outline=theme["border"], width=2)
-        text_x = _draw_point_label(points_draw, theme, box, number, font_small)
-        _draw_text(points_draw, text, (text_x, box[1] + 48), font_card, theme["text"])
-
-    summary_photo = _fit_image(src, layout["summary_photo_size"])
-    summary = Image.new("RGBA", (width, height), theme["background"])
-    summary_draw = ImageDraw.Draw(summary)
-    summary_draw.rounded_rectangle((48, 48, 1032, 1392), radius=radius + 10, fill=theme["card"])
-    _draw_theme_decoration(summary_draw, theme, width, height)
-    summary_draw.rounded_rectangle((88, 88, 992, 210), radius=radius, fill=theme["accent_soft"], outline=theme["border"], width=2)
-    summary_heading = "最后想说" if theme["decoration"] != "checklist" else "清单总结"
-    _draw_text(summary_draw, summary_heading, (128, 112), font_sub, theme["muted"])
-    _draw_text(summary_draw, summary_title_text, (128, 250), font_title, theme["text"])
-    photo_box = layout["summary_photo_box"]
-    summary_draw.rounded_rectangle(photo_box, radius=radius, fill=theme["photo_bg"], outline=theme["border"], width=2)
-    summary.alpha_composite(summary_photo, _box_centered_position(photo_box, summary_photo))
-
-    summary_texts = [suitable_for_text, recommend_reason_text, summary_sentence_text]
-    for index, (box, label) in enumerate(layout["summary_cards"]):
-        text = summary_texts[index]
-        summary_draw.rounded_rectangle(box, radius=max(18, radius - 8), fill=(255, 255, 255, 255), outline=theme["border"], width=2)
-        _draw_text(summary_draw, _summary_label(theme, label), (box[0] + 34, box[1] + 24), font_card_small, theme["accent"])
-        _draw_text(summary_draw, text, (box[0] + 260, box[1] + 24), font_card, theme["text"])
-
-    variants = [cover, points, summary]
-    paths = []
-    source_stem = Path(input_image_path).stem or "sample"
-    for idx, variant in enumerate(variants, start=1):
-        suffix = ["cover", "points", "summary"][idx - 1]
-        out_path = output_dir_path / f"poster_{idx}_{source_stem}_{suffix}.png"
-        variant.save(out_path)
-        paths.append(f"/static/generated/{out_path.name}")
-    return paths
+def compose_posters_enhanced(
+    input_image_path: str,
+    output_dir: str | None = None,
+    title: str = "种草机",
+    subtitle: str = "",
+    style: str = "清新简约",
+    selling_points: list[str] | None = None,
+    summary_title: str = "",
+    suitable_for: str = "",
+    recommend_reason: str = "",
+    summary_sentence: str = "",
+    category: str = "其他好物",
+    content_type: str = "",
+    product_name: str = "",
+) -> list[str]:
+    return _render_variants(
+        input_image_path,
+        output_dir,
+        title,
+        subtitle,
+        style,
+        selling_points,
+        summary_title,
+        suitable_for,
+        recommend_reason,
+        summary_sentence,
+        category,
+        content_type,
+        product_name,
+        True,
+    )

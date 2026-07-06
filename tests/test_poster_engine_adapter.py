@@ -16,7 +16,7 @@ def test_adapter_uses_pillow_engine_when_configured(monkeypatch):
         return ["/static/generated/fake_cover.png"]
 
     monkeypatch.setattr(poster_engine_adapter, "POSTER_ENGINE_TYPE", "pillow")
-    monkeypatch.setattr(poster_engine_adapter, "compose_posters", fake_compose_posters)
+    monkeypatch.setattr(poster_engine_adapter, "compose_posters_enhanced", fake_compose_posters)
 
     result = render_posters(
         PosterRenderInput(
@@ -42,13 +42,16 @@ def test_adapter_uses_pillow_engine_when_configured(monkeypatch):
     assert captured["style"] == "干货清单"
     assert captured["title"] == "水牛奶蛋糕，这几点值得看"
     assert captured["selling_points"] == ["早餐下午茶都能搭"]
+    assert captured["category"] == "食品饮品"
+    assert captured["content_type"] == "好物推荐"
+    assert captured["product_name"] == "水牛奶蛋糕"
 
 
 def test_external_placeholder_falls_back_to_pillow(monkeypatch):
     monkeypatch.setattr(poster_engine_adapter, "POSTER_ENGINE_TYPE", "external_placeholder")
     monkeypatch.setattr(
         poster_engine_adapter,
-        "compose_posters",
+        "compose_posters_enhanced",
         lambda **kwargs: ["/static/generated/external_fallback.png"],
     )
 
@@ -66,7 +69,7 @@ def test_invalid_engine_type_falls_back_to_pillow(monkeypatch):
     monkeypatch.setattr(poster_engine_adapter, "POSTER_ENGINE_TYPE", "mystery")
     monkeypatch.setattr(
         poster_engine_adapter,
-        "compose_posters",
+        "compose_posters_enhanced",
         lambda **kwargs: ["/static/generated/fallback.png"],
     )
 
