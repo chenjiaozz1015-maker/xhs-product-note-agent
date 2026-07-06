@@ -816,3 +816,66 @@ def test_pricing_page_is_public(monkeypatch):
         assert plan["display_name"] in response.text
         assert plan["price_label"] in response.text
     assert "注册试用" in response.text
+
+
+def test_generate_fallback_result_shows_safe_content_engine_message(monkeypatch):
+    client = _client(monkeypatch, "generate_fallback_message")
+    _register(client)
+    user = get_user_by_email("user@example.com")
+    assert user is not None
+
+    monkeypatch.setattr(
+        pages,
+        "build_result_payload",
+        lambda *args, **kwargs: {
+            "cover_title": "title",
+            "cover_subtitle": "subtitle",
+            "selling_points": ["point"],
+            "summary_title": "summary",
+            "suitable_for": "people",
+            "recommend_reason": "reason",
+            "summary_sentence": "sentence",
+            "note_titles": ["title"],
+            "note_body": "body",
+            "hashtags": ["#tag"],
+            "comments": ["comment"],
+            "product_name": "product",
+            "category": "category",
+            "content_engine_type": "rule_based",
+            "content_engine_requested_type": "llm_openai_compatible",
+            "content_engine_fallback_used": True,
+            "content_engine_fallback_reason": "llm_timeout",
+            "content_engine_display": "规则引擎（LLM 不可用，已自动回退）",
+        },
+    )
+    monkeypatch.setattr(
+        pages,
+        "render_posters",
+        lambda *args, **kwargs: pages.PosterRenderResult(
+            success=True,
+            image_paths=["/static/generated/fake.png"],
+            engine_type="pillow",
+        ),
+    )
+
+    response = client.post(
+        "/generate",
+        data={
+            "product_name": "product",
+            "category": "category",
+            "description": "description",
+            "content_type": "type",
+            "style": "style",
+        },
+        files={"image": ("sample.png", b"fake", "image/png")},
+    )
+    updated_user = get_user_by_email("user@example.com")
+
+    assert response.status_code == 200
+    assert "内容引擎" in response.text
+    assert "已自动回退" in response.text
+    assert "llm_timeout" not in response.text
+    assert "sk-test-key" not in response.text
+    assert updated_user is not None
+    assert updated_user["used_quota"] == 1
+    assert _record_count(int(user["id"])) == 1

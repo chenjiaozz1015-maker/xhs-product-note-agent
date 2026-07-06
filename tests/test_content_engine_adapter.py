@@ -52,6 +52,9 @@ def test_rule_based_engine_generates_compatible_note_data(monkeypatch):
 
     assert result.success is True
     assert result.engine_type == "rule_based"
+    assert result.requested_engine_type == "rule_based"
+    assert result.fallback_used is False
+    assert result.fallback_reason == ""
     assert result.error_message is None
     assert result.note_data["cover_title"]
     assert result.note_data["note_body"]
@@ -73,6 +76,9 @@ def test_llm_placeholder_falls_back_to_rule_based(monkeypatch):
 
     assert result.success is True
     assert result.engine_type == "rule_based"
+    assert result.requested_engine_type == "llm_placeholder"
+    assert result.fallback_used is True
+    assert result.fallback_reason == "llm_disabled"
     assert result.note_data["sub_category"] == "hand_body_care"
     assert result.error_message == "llm_disabled"
 
@@ -84,6 +90,9 @@ def test_unknown_content_engine_falls_back_to_rule_based(monkeypatch):
 
     assert result.success is True
     assert result.engine_type == "rule_based"
+    assert result.requested_engine_type == "mystery"
+    assert result.fallback_used is True
+    assert result.fallback_reason == "unknown_content_engine"
     assert result.error_message == "unknown_content_engine"
     assert result.note_data["sub_category"] == "cup_bottle"
 
@@ -127,6 +136,9 @@ def test_llm_openai_compatible_missing_key_falls_back(monkeypatch):
 
     assert result.success is True
     assert result.engine_type == "rule_based"
+    assert result.requested_engine_type == "llm_openai_compatible"
+    assert result.fallback_used is True
+    assert result.fallback_reason == "llm_config_missing"
     assert result.error_message == "llm_config_missing"
     assert result.note_data["sub_category"] == "cup_bottle"
 
@@ -157,6 +169,9 @@ def test_llm_openai_compatible_uses_llm_note_data_when_valid(monkeypatch):
 
     assert result.success is True
     assert result.engine_type == "llm_openai_compatible"
+    assert result.requested_engine_type == "llm_openai_compatible"
+    assert result.fallback_used is False
+    assert result.fallback_reason == ""
     assert result.error_message is None
     assert result.note_data["sub_category"] == "cup_bottle"
     assert all(tag.startswith("#") for tag in result.note_data["hashtags"])
@@ -225,6 +240,9 @@ def test_llm_openai_compatible_invalid_json_falls_back(monkeypatch):
 
     assert result.success is True
     assert result.engine_type == "rule_based"
+    assert result.requested_engine_type == "llm_openai_compatible"
+    assert result.fallback_used is True
+    assert result.fallback_reason == "llm_invalid_json"
     assert result.error_message == "llm_invalid_json"
     assert result.note_data["sub_category"] == "bakery"
 
@@ -241,6 +259,9 @@ def test_llm_openai_compatible_missing_fields_falls_back(monkeypatch):
 
     assert result.success is True
     assert result.engine_type == "rule_based"
+    assert result.requested_engine_type == "llm_openai_compatible"
+    assert result.fallback_used is True
+    assert result.fallback_reason == "llm_schema_invalid"
     assert result.error_message == "llm_schema_invalid"
     assert result.note_data["sub_category"] == "hand_body_care"
 
@@ -257,6 +278,9 @@ def test_llm_openai_compatible_timeout_falls_back(monkeypatch):
 
     assert result.success is True
     assert result.engine_type == "rule_based"
+    assert result.requested_engine_type == "llm_openai_compatible"
+    assert result.fallback_used is True
+    assert result.fallback_reason == "llm_timeout"
     assert result.error_message == "llm_timeout"
 
 
@@ -281,4 +305,9 @@ def test_note_builder_uses_content_engine_adapter_and_keeps_shape(monkeypatch):
     assert payload["hashtags"]
     assert payload["comments"]
     assert payload["sub_category"] == "drink"
+    assert payload["content_engine_type"] == "rule_based"
+    assert payload["content_engine_requested_type"] == "llm_placeholder"
+    assert payload["content_engine_fallback_used"] is True
+    assert payload["content_engine_fallback_reason"] == "llm_disabled"
+    assert "规则引擎" in payload["content_engine_display"]
     assert payload["content_engine_warning"] == "llm_disabled"

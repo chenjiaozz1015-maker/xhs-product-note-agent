@@ -34,6 +34,21 @@
       </section>
       {% endif %}
 
+      {% if result.content_engine_display %}
+      <section class="card quota-result-tip content-engine-tip">
+        <div>
+          <strong>内容引擎：{{ result.content_engine_display }}</strong>
+          {% if result.content_engine_type == "llm_openai_compatible" %}
+          <span>当前文案由 LLM 生成。</span>
+          {% elif result.content_engine_fallback_used %}
+          <span>本次已自动使用规则引擎完成生成。</span>
+          {% else %}
+          <span>当前文案由规则引擎生成。</span>
+          {% endif %}
+        </div>
+      </section>
+      {% endif %}
+
       <section class="card regenerate-tip">
         <div>
           <h2>生成效果不满意？</h2>
@@ -173,7 +188,7 @@
         </ol>
       </section>
 
-      <p class="version-note">种草机 {{ app_version }} 小样本文案评测版</p>
+      <p class="version-note">种草机 {{ app_version }} LLM 可控启用版</p>
     </main>
     <script src="{{ url_for('static', path='js/app.js') }}"></script>
   </body>

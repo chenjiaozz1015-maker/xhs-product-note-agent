@@ -27,6 +27,9 @@ class ContentGenerateInput:
 class ContentGenerateResult:
     success: bool
     engine_type: str = "rule_based"
+    requested_engine_type: str = "rule_based"
+    fallback_used: bool = False
+    fallback_reason: str = ""
     note_data: dict[str, Any] = field(default_factory=dict)
     error_message: str | None = None
 
@@ -38,7 +41,13 @@ def resolve_content_engine_type(engine_type: str | None = None) -> str:
     return "rule_based"
 
 
-def generate_content_with_rule_based(content_input: ContentGenerateInput) -> ContentGenerateResult:
+def generate_content_with_rule_based(
+    content_input: ContentGenerateInput,
+    requested_engine_type: str = "rule_based",
+    fallback_used: bool = False,
+    fallback_reason: str = "",
+    error_message: str | None = None,
+) -> ContentGenerateResult:
     note_data = generate_note_payload(
         description=content_input.description,
         content_type=content_input.content_type,
@@ -46,7 +55,15 @@ def generate_content_with_rule_based(content_input: ContentGenerateInput) -> Con
         product_name=content_input.product_name,
         category=content_input.category,
     )
-    return ContentGenerateResult(success=True, engine_type="rule_based", note_data=note_data)
+    return ContentGenerateResult(
+        success=True,
+        engine_type="rule_based",
+        requested_engine_type=requested_engine_type,
+        fallback_used=fallback_used,
+        fallback_reason=fallback_reason,
+        note_data=note_data,
+        error_message=error_message,
+    )
 
 
 def generate_content_with_llm_openai_compatible(
@@ -58,12 +75,18 @@ def generate_content_with_llm_openai_compatible(
         return ContentGenerateResult(
             success=True,
             engine_type="llm_openai_compatible",
+            requested_engine_type="llm_openai_compatible",
+            fallback_used=False,
+            fallback_reason="",
             note_data=llm_result.note_data,
             error_message=llm_result.error_message,
         )
     return ContentGenerateResult(
         success=True,
         engine_type="rule_based",
+        requested_engine_type="llm_openai_compatible",
+        fallback_used=True,
+        fallback_reason=llm_result.error_message or "llm_request_failed",
         note_data=fallback_note_data,
         error_message=llm_result.error_message,
     )
@@ -75,31 +98,37 @@ def generate_content(
 ) -> ContentGenerateResult:
     requested_engine_type = str(engine_type or CONTENT_ENGINE_TYPE or "rule_based").strip() or "rule_based"
     resolved_engine_type = resolve_content_engine_type(engine_type)
-    rule_based_result = generate_content_with_rule_based(content_input)
+    rule_based_result = generate_content_with_rule_based(
+        content_input,
+        requested_engine_type=requested_engine_type,
+    )
 
     if requested_engine_type not in SUPPORTED_CONTENT_ENGINE_TYPES:
-        return ContentGenerateResult(
-            success=rule_based_result.success,
-            engine_type="rule_based",
-            note_data=rule_based_result.note_data,
+        return generate_content_with_rule_based(
+            content_input,
+            requested_engine_type=requested_engine_type,
+            fallback_used=True,
+            fallback_reason="unknown_content_engine",
             error_message="unknown_content_engine",
         )
 
     if resolved_engine_type == "llm_placeholder":
-        return ContentGenerateResult(
-            success=rule_based_result.success,
-            engine_type="rule_based",
-            note_data=rule_based_result.note_data,
+        return generate_content_with_rule_based(
+            content_input,
+            requested_engine_type=requested_engine_type,
+            fallback_used=True,
+            fallback_reason="llm_disabled",
             error_message="llm_disabled",
         )
 
     if resolved_engine_type == "llm_openai_compatible":
         config_status = get_llm_config_status(content_engine_type=resolved_engine_type)
         if not config_status.llm_config_ready:
-            return ContentGenerateResult(
-                success=rule_based_result.success,
-                engine_type="rule_based",
-                note_data=rule_based_result.note_data,
+            return generate_content_with_rule_based(
+                content_input,
+                requested_engine_type=requested_engine_type,
+                fallback_used=True,
+                fallback_reason=config_status.status_code,
                 error_message=config_status.status_code,
             )
         return generate_content_with_llm_openai_compatible(content_input, rule_based_result.note_data)

@@ -4,7 +4,7 @@
 上传商品图片、商品名称、商品类目和一句描述，自动生成小红书风格图片素材包与发布文案。
 
 ## 当前版本
-种草机 v0.5-6 小样本文案评测版
+种草机 v0.6-1 LLM 可控启用版
 
 ## 在线试用
 https://zhongcaoji.onrender.com/
@@ -20,14 +20,15 @@ https://zhongcaoji.onrender.com/
 - 结果页支持下载、复制、编辑标题/正文/标签/评论引导
 - 当前内容生成已支持规则引擎与 OpenAI-compatible 风格 LLM 最小接入
 
-## v0.5-6 本轮增强
-- 新增 `scripts/batch_evaluate_content.py`
-- 支持内置小样本批量对比 `rule_based` 与 `llm_openai_compatible`
-- 支持终端输出、Markdown 报告和 JSON 报告
-- LLM 配置不完整时整体 `SKIPPED`，不会请求外网
-- 单个样例 LLM 失败不会影响其他样例继续评测
-- 不扣额度、不写生成记录、不生成图片、不修改数据库
-- 线上默认仍建议使用 `CONTENT_ENGINE_TYPE=rule_based`
+## v0.6-1 本轮增强
+- 正式生成流程支持通过 `CONTENT_ENGINE_TYPE` 可控启用 `llm_openai_compatible`
+- 默认仍然是 `rule_based`
+- LLM 配置不完整或请求失败时自动 fallback 到 `rule_based`
+- `ContentGenerateResult` 增加 requested / actual / fallback 元信息
+- 结果页可轻量显示本次文案的内容引擎来源
+- 不重复扣额度，不重复写生成记录
+- 不影响图片生成 3 张图
+- 不暴露 API Key、完整报错或完整接口返回
 - Render 不需要配置 `APP_VERSION`，版本号跟随代码默认值
 
 ## 当前额度规则
@@ -167,6 +168,32 @@ python scripts/smoke_check_llm.py
 ```
 - 不要提交 `.env`、真实 `API Key`、`content_eval.md`、`content_eval.json`
 
+## 如何安全启用 LLM
+线上默认保持：
+```bash
+CONTENT_ENGINE_TYPE=rule_based
+```
+
+启用前建议依次运行：
+```bash
+python scripts/check_llm_config.py
+python scripts/smoke_check_llm.py
+python scripts/compare_content_engines.py
+python scripts/batch_evaluate_content.py
+```
+
+确认效果稳定后，再把环境变量改为：
+```bash
+CONTENT_ENGINE_TYPE=llm_openai_compatible
+```
+
+说明：
+- 正式 `POST /generate` 流程现在已经支持在配置完整时尝试 LLM
+- 如果 LLM 不可用、超时、返回非法 JSON 或 schema 不兼容，会自动回退到 `rule_based`
+- 用户不应该看到报错页
+- 结果页只会轻量显示“规则引擎 / LLM 生成 / 已自动回退”
+- 回退后仍然只扣 1 次额度、只写 1 条生成记录
+
 ## LLM 最小接入配置
 ```bash
 CONTENT_ENGINE_TYPE=llm_openai_compatible
@@ -243,7 +270,7 @@ py -m pytest -q --basetemp .tmp/pytest
 ```
 
 ## /health 版本说明
-`/health` 返回的 `version` 默认读取 `app/config.py` 里的代码版本，当前默认值为 `v0.5-6`。
+`/health` 返回的 `version` 默认读取 `app/config.py` 里的代码版本，当前默认值为 `v0.6-1`。
 `APP_VERSION` 只作为可选覆盖项。
 
 部署建议：
@@ -254,6 +281,7 @@ py -m pytest -q --basetemp .tmp/pytest
 如果 Render 线上 `/health` 仍显示旧版本，优先检查 Render Environment 里是否配置过 `APP_VERSION`；如果配过，建议删除该环境变量后重新部署，让版本号回到代码默认值。
 
 ## 版本记录
+- v0.6-1：正式生成流程支持通过 `CONTENT_ENGINE_TYPE` 可控启用 `llm_openai_compatible`；默认仍然是 `rule_based`；LLM 配置不完整或请求失败时自动 fallback 到 `rule_based`；`ContentGenerateResult` 增加 requested / actual / fallback 元信息；结果页可轻量显示内容引擎来源；不重复扣额度，不重复写生成记录，不影响图片生成，不暴露 API Key；Render 不需要配置 `APP_VERSION`，版本号跟随代码默认值。
 - v0.5-6：新增 `scripts/batch_evaluate_content.py`；支持内置小样本批量对比 `rule_based` 与 `llm_openai_compatible`；支持终端输出、Markdown 报告和 JSON 报告；LLM 配置不完整时整体 `SKIPPED` 且不请求外网；单个样例 LLM 失败不影响其他样例；不扣额度、不写生成记录、不生成图片、不修改数据库；线上默认仍建议使用 `CONTENT_ENGINE_TYPE=rule_based`；Render 不需要配置 `APP_VERSION`，版本号跟随代码默认值。
 - v0.5-5：新增 `scripts/compare_content_engines.py`；支持同一商品输入下对比 `rule_based` 与 `llm_openai_compatible` 文案；LLM 配置不完整时自动 `SKIPPED`；LLM 失败时不影响 `rule_based` 结果；对比脚本不扣额度、不写生成记录、不生成图片、不修改数据库；线上默认仍建议使用 `CONTENT_ENGINE_TYPE=rule_based`；Render 不再需要配置 `APP_VERSION`，版本号跟随代码默认值。
 - v0.5-4：新增 `scripts/smoke_check_llm.py`；支持人工手动测试国产 OpenAI-compatible 模型接口连通性；smoke check 只生成文案测试结果，不扣额度、不写生成记录、不生成图片；不影响用户主流程；API Key 只做 masked 展示；线上默认仍建议使用 `rule_based`。
