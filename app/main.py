@@ -8,7 +8,16 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from app.config import APP_NAME, APP_VERSION, GENERATED_DIR, SESSION_SECRET, STATIC_DIR, UPLOAD_DIR
+from app.config import (
+    APP_NAME,
+    APP_VERSION,
+    CONTENT_ENGINE_TYPE,
+    GENERATED_DIR,
+    POSTER_ENGINE_TYPE,
+    SESSION_SECRET,
+    STATIC_DIR,
+    UPLOAD_DIR,
+)
 from app.middleware.session import SignedCookieSessionMiddleware
 from app.routes.auth import router as auth_router
 from app.routes.pages import router as pages_router
@@ -28,6 +37,8 @@ async def health() -> dict:
         "status": "ok",
         "app": "zhongcaoji",
         "version": APP_VERSION,
+        "content_engine_type": CONTENT_ENGINE_TYPE,
+        "poster_engine_type": POSTER_ENGINE_TYPE,
         "uploads_dir_exists": UPLOAD_DIR.exists(),
         "generated_dir_exists": GENERATED_DIR.exists(),
         "static_dir_exists": STATIC_DIR.exists(),

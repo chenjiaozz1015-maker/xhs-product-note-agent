@@ -17,11 +17,18 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 APP_NAME = os.getenv("APP_NAME", "种草机")
 APP_TITLE = os.getenv("APP_TITLE", APP_NAME)
-APP_VERSION = os.getenv("APP_VERSION", "v0.4-3")
+APP_VERSION = os.getenv("APP_VERSION", "v0.5-2")
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))
 SESSION_SECRET = os.getenv("SESSION_SECRET", "change-this-session-secret")
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///data/zhongcaoji.db")
+CONTENT_ENGINE_TYPE = os.getenv("CONTENT_ENGINE_TYPE", "rule_based").strip() or "rule_based"
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai_compatible").strip() or "openai_compatible"
+LLM_API_KEY = os.getenv("LLM_API_KEY", "").strip()
+LLM_BASE_URL = os.getenv("LLM_BASE_URL", "").strip()
+LLM_MODEL = os.getenv("LLM_MODEL", "").strip()
+LLM_TIMEOUT_SECONDS = float(os.getenv("LLM_TIMEOUT_SECONDS", "15") or "15")
+LLM_MAX_RETRIES = max(0, int(os.getenv("LLM_MAX_RETRIES", "1") or "1"))
 POSTER_ENGINE_TYPE = os.getenv("POSTER_ENGINE_TYPE", "pillow").strip() or "pillow"
 
 
