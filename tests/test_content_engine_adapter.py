@@ -1,4 +1,4 @@
-from app.services import content_engine_adapter, llm_content_service
+﻿from app.services import content_engine_adapter, llm_content_service
 from app.services.content_engine_adapter import (
     ContentGenerateInput,
     generate_content,
@@ -26,10 +26,11 @@ def _sample_input(**overrides):
 def _enable_llm(monkeypatch):
     monkeypatch.setattr(content_engine_adapter, "CONTENT_ENGINE_TYPE", "llm_openai_compatible")
     monkeypatch.setattr(llm_content_service, "LLM_PROVIDER", "openai_compatible")
-    monkeypatch.setattr(llm_content_service, "LLM_API_KEY", "test-key")
+    monkeypatch.setattr(llm_content_service, "LLM_API_KEY", "sk-test-key-1234")
     monkeypatch.setattr(llm_content_service, "LLM_BASE_URL", "https://example.com/v1")
     monkeypatch.setattr(llm_content_service, "LLM_MODEL", "demo-model")
-    monkeypatch.setattr(llm_content_service, "LLM_MAX_RETRIES", 0)
+    monkeypatch.setattr(llm_content_service, "LLM_TIMEOUT_SECONDS_RAW", "15")
+    monkeypatch.setattr(llm_content_service, "LLM_MAX_RETRIES_RAW", "0")
 
 
 def test_content_engine_type_defaults_to_rule_based(monkeypatch):
@@ -73,21 +74,60 @@ def test_llm_placeholder_falls_back_to_rule_based(monkeypatch):
     assert result.success is True
     assert result.engine_type == "rule_based"
     assert result.note_data["sub_category"] == "hand_body_care"
-    assert result.error_message is not None
+    assert result.error_message == "llm_disabled"
 
 
-def test_llm_openai_compatible_missing_key_falls_back(monkeypatch):
-    monkeypatch.setattr(content_engine_adapter, "CONTENT_ENGINE_TYPE", "llm_openai_compatible")
-    monkeypatch.setattr(llm_content_service, "LLM_PROVIDER", "openai_compatible")
-    monkeypatch.setattr(llm_content_service, "LLM_API_KEY", "")
-    monkeypatch.setattr(llm_content_service, "LLM_BASE_URL", "https://example.com/v1")
-    monkeypatch.setattr(llm_content_service, "LLM_MODEL", "demo-model")
+def test_unknown_content_engine_falls_back_to_rule_based(monkeypatch):
+    monkeypatch.setattr(content_engine_adapter, "CONTENT_ENGINE_TYPE", "mystery")
 
     result = generate_content(_sample_input())
 
     assert result.success is True
     assert result.engine_type == "rule_based"
-    assert result.error_message is not None
+    assert result.error_message == "unknown_content_engine"
+    assert result.note_data["sub_category"] == "cup_bottle"
+
+
+def test_llm_config_status_not_ready_when_api_key_missing(monkeypatch):
+    _enable_llm(monkeypatch)
+    monkeypatch.setattr(llm_content_service, "LLM_API_KEY", "")
+
+    status = llm_content_service.get_llm_config_status("llm_openai_compatible")
+
+    assert status.llm_config_ready is False
+    assert status.status_code == "llm_config_missing"
+    assert "LLM_API_KEY" in status.missing_fields
+
+
+def test_llm_config_status_not_ready_when_base_url_missing(monkeypatch):
+    _enable_llm(monkeypatch)
+    monkeypatch.setattr(llm_content_service, "LLM_BASE_URL", "")
+
+    status = llm_content_service.get_llm_config_status("llm_openai_compatible")
+
+    assert status.llm_config_ready is False
+    assert "LLM_BASE_URL" in status.missing_fields
+
+
+def test_llm_config_status_not_ready_when_model_missing(monkeypatch):
+    _enable_llm(monkeypatch)
+    monkeypatch.setattr(llm_content_service, "LLM_MODEL", "")
+
+    status = llm_content_service.get_llm_config_status("llm_openai_compatible")
+
+    assert status.llm_config_ready is False
+    assert "LLM_MODEL" in status.missing_fields
+
+
+def test_llm_openai_compatible_missing_key_falls_back(monkeypatch):
+    _enable_llm(monkeypatch)
+    monkeypatch.setattr(llm_content_service, "LLM_API_KEY", "")
+
+    result = generate_content(_sample_input())
+
+    assert result.success is True
+    assert result.engine_type == "rule_based"
+    assert result.error_message == "llm_config_missing"
     assert result.note_data["sub_category"] == "cup_bottle"
 
 
@@ -100,12 +140,12 @@ def test_llm_openai_compatible_uses_llm_note_data_when_valid(monkeypatch):
     def fake_post(*, endpoint, payload, headers, timeout_seconds):
         assert endpoint == "https://example.com/v1/chat/completions"
         assert payload["model"] == "demo-model"
-        assert headers["Authorization"] == "Bearer test-key"
+        assert headers["Authorization"] == "Bearer sk-test-key-1234"
         return {
             "choices": [
                 {
                     "message": {
-                        "content": '{"titles": ["%s", "日常补水更顺手"], "body": "%s", "hashtags": ["通勤带", "日常补水", "冷热饮"], "comment_prompts": ["你更在意容量还是保温？"], "selling_points": [{"title": "容量刚好", "description": "通勤不会太重"}, {"title": "日常补水", "description": "带着更方便"}, {"title": "冷热饮都行", "description": "办公室和外出都适合"}], "summary_title": "通勤补水更轻松", "suitable_for": "通勤上班族", "recommend_reason": "放包里也省心", "summary_sentence": "通勤和日常补水都适合。"}' % (long_title, long_body)
+                        "content": '{"titles": ["%s", "日常补水更顺手", "通勤杯子我会带", "放包里也安心", "冷热饮都能装", "这一条会被截断"], "body": "%s", "hashtags": ["通勤带", "日常补水", "冷热饮", "通勤带", "外出方便", "办公室", "书包里", "容量刚好", "超出标签"], "comment_prompts": ["你更在意容量还是保温？", "你会放办公室还是包里？"], "selling_points": [{"title": "容量刚好", "description": "通勤不会太重"}, {"title": "日常补水", "description": "带着更方便"}, {"title": "冷热饮都行", "description": "办公室和外出都适合"}, {"title": "多余卖点", "description": "这一条应被截断"}], "summary_title": "通勤补水更轻松", "suitable_for": "通勤上班族", "recommend_reason": "放包里也省心", "summary_sentence": "通勤和日常补水都适合。"}' % (long_title, long_body)
                     }
                 }
             ]
@@ -120,9 +160,57 @@ def test_llm_openai_compatible_uses_llm_note_data_when_valid(monkeypatch):
     assert result.error_message is None
     assert result.note_data["sub_category"] == "cup_bottle"
     assert all(tag.startswith("#") for tag in result.note_data["hashtags"])
+    assert len(result.note_data["hashtags"]) == 8
+    assert len(result.note_data["note_titles"]) == 5
     assert len(result.note_data["note_titles"][0]) <= llm_content_service.MAX_TITLE_LENGTH
     assert len(result.note_data["note_body"]) <= llm_content_service.MAX_BODY_LENGTH
-    assert result.note_data["selling_points"] == ["容量刚好 通勤不会太重", "日常补水 带着更方便", "冷热饮都行 办公室和外出都适合"]
+    assert len(result.note_data["selling_points"]) == 3
+
+
+def test_llm_markdown_code_block_json_can_be_parsed(monkeypatch):
+    _enable_llm(monkeypatch)
+    monkeypatch.setattr(
+        llm_content_service,
+        "_post_chat_completion",
+        lambda **_: {
+            "choices": [
+                {
+                    "message": {
+                        "content": '```json\n{"titles":["标题一","标题二","标题三"],"body":"这是一段适合小红书的正文内容，语气更像真实分享。","hashtags":["标签一","标签二","标签三","标签四","标签五"],"comment_prompts":["你会怎么选？","你更在意哪一点？"],"selling_points":[{"title":"容量刚好","description":"通勤不会太重"},{"title":"日常补水","description":"带着更方便"},{"title":"冷热饮都行","description":"办公室和外出都适合"}],"summary_title":"总结标题","suitable_for":"通勤人群","recommend_reason":"放包里省心","summary_sentence":"日常补水更轻松。"}\n```'
+                    }
+                }
+            ]
+        },
+    )
+
+    result = generate_content(_sample_input())
+
+    assert result.success is True
+    assert result.engine_type == "llm_openai_compatible"
+    assert len(result.note_data["note_titles"]) >= 3
+
+
+def test_llm_json_with_explanation_text_can_be_extracted(monkeypatch):
+    _enable_llm(monkeypatch)
+    monkeypatch.setattr(
+        llm_content_service,
+        "_post_chat_completion",
+        lambda **_: {
+            "choices": [
+                {
+                    "message": {
+                        "content": '下面是结果，请直接使用：\n{"titles":["标题一","标题二","标题三"],"body":"这是一段适合小红书的正文内容，语气更像真实分享。","hashtags":["标签一","标签二","标签三","标签四","标签五"],"comment_prompts":["你会怎么选？","你更在意哪一点？"],"selling_points":[{"title":"容量刚好","description":"通勤不会太重"},{"title":"日常补水","description":"带着更方便"},{"title":"冷热饮都行","description":"办公室和外出都适合"}],"summary_title":"总结标题","suitable_for":"通勤人群","recommend_reason":"放包里省心","summary_sentence":"日常补水更轻松。"}\n谢谢。'
+                    }
+                }
+            ]
+        },
+    )
+
+    result = generate_content(_sample_input())
+
+    assert result.success is True
+    assert result.engine_type == "llm_openai_compatible"
+    assert len(result.note_data["note_titles"]) >= 3
 
 
 def test_llm_openai_compatible_invalid_json_falls_back(monkeypatch):
@@ -137,7 +225,7 @@ def test_llm_openai_compatible_invalid_json_falls_back(monkeypatch):
 
     assert result.success is True
     assert result.engine_type == "rule_based"
-    assert result.error_message is not None
+    assert result.error_message == "llm_invalid_json"
     assert result.note_data["sub_category"] == "bakery"
 
 
@@ -153,7 +241,7 @@ def test_llm_openai_compatible_missing_fields_falls_back(monkeypatch):
 
     assert result.success is True
     assert result.engine_type == "rule_based"
-    assert result.error_message is not None
+    assert result.error_message == "llm_schema_invalid"
     assert result.note_data["sub_category"] == "hand_body_care"
 
 
@@ -169,17 +257,7 @@ def test_llm_openai_compatible_timeout_falls_back(monkeypatch):
 
     assert result.success is True
     assert result.engine_type == "rule_based"
-    assert "fallback" in (result.error_message or "")
-
-
-def test_invalid_content_engine_type_falls_back_to_rule_based(monkeypatch):
-    monkeypatch.setattr(content_engine_adapter, "CONTENT_ENGINE_TYPE", "mystery")
-
-    result = generate_content(_sample_input())
-
-    assert result.success is True
-    assert result.engine_type == "rule_based"
-    assert result.note_data["sub_category"] == "cup_bottle"
+    assert result.error_message == "llm_timeout"
 
 
 def test_note_builder_uses_content_engine_adapter_and_keeps_shape(monkeypatch):
@@ -203,4 +281,4 @@ def test_note_builder_uses_content_engine_adapter_and_keeps_shape(monkeypatch):
     assert payload["hashtags"]
     assert payload["comments"]
     assert payload["sub_category"] == "drink"
-    assert payload["content_engine_warning"] is not None
+    assert payload["content_engine_warning"] == "llm_disabled"

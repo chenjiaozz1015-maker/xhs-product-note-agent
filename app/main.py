@@ -1,4 +1,4 @@
-from pathlib import Path
+﻿from pathlib import Path
 import sys
 
 from fastapi import FastAPI
@@ -22,6 +22,7 @@ from app.middleware.session import SignedCookieSessionMiddleware
 from app.routes.auth import router as auth_router
 from app.routes.pages import router as pages_router
 from app.services.image_composer import get_cjk_font_path
+from app.services.llm_content_service import get_llm_config_status
 
 app = FastAPI(title=APP_NAME)
 app.add_middleware(SignedCookieSessionMiddleware, secret_key=SESSION_SECRET)
@@ -33,12 +34,15 @@ app.include_router(pages_router)
 @app.get("/health")
 async def health() -> dict:
     font_path = get_cjk_font_path()
+    llm_status = get_llm_config_status(CONTENT_ENGINE_TYPE)
     return {
         "status": "ok",
         "app": "zhongcaoji",
         "version": APP_VERSION,
         "content_engine_type": CONTENT_ENGINE_TYPE,
         "poster_engine_type": POSTER_ENGINE_TYPE,
+        "llm_provider": llm_status.llm_provider,
+        "llm_config_ready": llm_status.llm_config_ready,
         "uploads_dir_exists": UPLOAD_DIR.exists(),
         "generated_dir_exists": GENERATED_DIR.exists(),
         "static_dir_exists": STATIC_DIR.exists(),

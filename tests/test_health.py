@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 
 from app.config import APP_VERSION
 from app.main import health
@@ -10,9 +10,11 @@ def test_health_returns_version_and_directory_status():
     assert payload["status"] == "ok"
     assert payload["app"] == "zhongcaoji"
     assert payload["version"] == APP_VERSION
-    assert payload["version"] == "v0.5-2"
+    assert payload["version"] == "v0.5-3"
     assert payload["content_engine_type"]
     assert payload["poster_engine_type"]
+    assert payload["llm_provider"] == "openai_compatible"
+    assert "llm_config_ready" in payload
     assert payload["uploads_dir_exists"] is True
     assert payload["generated_dir_exists"] is True
     assert payload["static_dir_exists"] is True

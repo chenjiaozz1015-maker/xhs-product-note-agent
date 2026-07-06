@@ -1,4 +1,4 @@
-from app.services.content_engine_adapter import ContentGenerateInput, generate_content
+﻿from app.services.content_engine_adapter import ContentGenerateInput, generate_content
 
 
 def build_result_payload(

@@ -1,18 +1,15 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any
 
 from app.config import CONTENT_ENGINE_TYPE
 from app.services.content_generator import generate_note_payload
-from app.services.llm_content_service import generate_openai_compatible_note_data
-
-
-SUPPORTED_CONTENT_ENGINE_TYPES = {
-    "rule_based",
-    "llm_placeholder",
-    "llm_openai_compatible",
-}
+from app.services.llm_content_service import (
+    SUPPORTED_CONTENT_ENGINE_TYPES,
+    generate_openai_compatible_note_data,
+    get_llm_config_status,
+)
 
 
 @dataclass(frozen=True)
@@ -76,18 +73,35 @@ def generate_content(
     content_input: ContentGenerateInput,
     engine_type: str | None = None,
 ) -> ContentGenerateResult:
+    requested_engine_type = str(engine_type or CONTENT_ENGINE_TYPE or "rule_based").strip() or "rule_based"
     resolved_engine_type = resolve_content_engine_type(engine_type)
     rule_based_result = generate_content_with_rule_based(content_input)
+
+    if requested_engine_type not in SUPPORTED_CONTENT_ENGINE_TYPES:
+        return ContentGenerateResult(
+            success=rule_based_result.success,
+            engine_type="rule_based",
+            note_data=rule_based_result.note_data,
+            error_message="unknown_content_engine",
+        )
 
     if resolved_engine_type == "llm_placeholder":
         return ContentGenerateResult(
             success=rule_based_result.success,
             engine_type="rule_based",
             note_data=rule_based_result.note_data,
-            error_message="llm_placeholder 当前未接入真实大模型，已 fallback 到 rule_based。",
+            error_message="llm_disabled",
         )
 
     if resolved_engine_type == "llm_openai_compatible":
+        config_status = get_llm_config_status(content_engine_type=resolved_engine_type)
+        if not config_status.llm_config_ready:
+            return ContentGenerateResult(
+                success=rule_based_result.success,
+                engine_type="rule_based",
+                note_data=rule_based_result.note_data,
+                error_message=config_status.status_code,
+            )
         return generate_content_with_llm_openai_compatible(content_input, rule_based_result.note_data)
 
     return rule_based_result

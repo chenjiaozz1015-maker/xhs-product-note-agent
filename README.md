@@ -4,7 +4,7 @@
 上传商品图片、商品名称、商品类目和一句描述，自动生成小红书风格图片素材包与发布文案。
 
 ## 当前版本
-种草机 v0.5-2 LLM 文案引擎版
+种草机 v0.5-3 LLM 配置校验版
 
 ## 在线试用
 https://zhongcaoji.onrender.com/
@@ -20,14 +20,14 @@ https://zhongcaoji.onrender.com/
 - 结果页支持下载、复制、编辑标题/正文/标签/评论引导
 - 当前内容生成已支持规则引擎与 OpenAI-compatible 风格 LLM 最小接入
 
-## v0.5-2 本轮增强
-- 新增 `app/services/llm_content_service.py`
-- `CONTENT_ENGINE_TYPE` 新增 `llm_openai_compatible`
-- 增加 `LLM_PROVIDER / LLM_API_KEY / LLM_BASE_URL / LLM_MODEL / LLM_TIMEOUT_SECONDS / LLM_MAX_RETRIES` 配置
-- 通过 `content_engine_adapter.py` 统一接入规则文案与 LLM 文案
-- 当密钥缺失、URL 无效、超时、返回非 JSON 或字段不完整时，自动 fallback 到 `rule_based`
-- LLM 返回结果会统一归一化到现有 `note_data` 结构，不影响结果页、图片生成和复制编辑流程
-- 当前不接真实 OpenAI SDK，不请求外网测试，不影响额度扣减和生成记录写入
+## v0.5-3 本轮增强
+- 增强 LLM 配置校验
+- 新增中心化部署下的 LLM 配置诊断脚本 `scripts/check_llm_config.py`
+- 优化面向国产兼容模型的 prompt 约束
+- 增强 LLM JSON 清洗与结构校验
+- 当 LLM 配置不完整或返回异常时继续 fallback 到 `rule_based`
+- `/health` 增加 LLM 配置状态摘要
+- 不提交真实密钥，不默认启用 LLM
 
 ## 当前额度规则
 - `trial` 默认 10 次 / 30 天
@@ -56,10 +56,44 @@ https://zhongcaoji.onrender.com/
 - 这里的 `openai_compatible` 指“兼容 OpenAI 风格接口协议”，不限定 OpenAI 官方服务
 - 后续可通过配置 `LLM_BASE_URL`、`LLM_MODEL`、`LLM_API_KEY` 接入国产模型平台，例如 DeepSeek、通义千问 Qwen、智谱 GLM、Kimi、豆包、腾讯混元等
 - 当前实现没有写死官方域名、官方模型名，也不依赖 openai SDK
-- 未来可继续扩展：`openai`、`deepseek`、`qwen`、`local_llm`
-- 真实大模型接入时，建议继续通过 `content_engine_adapter.py` 适配，不直接替换 `content_generator.py`
 - 规则引擎保留为默认和兜底方案
 - 当前如果 LLM 调用失败，会自动回退到规则文案，避免影响主流程
+
+## 国产模型接入准备说明
+- 当前推荐继续使用 `CONTENT_ENGINE_TYPE=rule_based` 作为线上默认
+- 若要启用国产模型兼容接口，设置 `CONTENT_ENGINE_TYPE=llm_openai_compatible`
+- 同时配置：
+  - `LLM_PROVIDER=openai_compatible`
+  - `LLM_BASE_URL`
+  - `LLM_MODEL`
+  - `LLM_API_KEY`
+- 不要把真实密钥写入代码或提交到 Git
+- 建议先运行：
+```bash
+python scripts/check_llm_config.py
+```
+- 配置完整不代表真实 API 一定可用，这一轮只做本地配置诊断，不做真实外网连通测试
+- 若 LLM 失败，系统会自动 fallback 到 `rule_based`
+
+## LLM 最小接入配置
+```bash
+CONTENT_ENGINE_TYPE=llm_openai_compatible
+LLM_PROVIDER=openai_compatible
+LLM_API_KEY=your_api_key
+LLM_BASE_URL=https://your-openai-compatible-host/v1
+LLM_MODEL=your-model-name
+LLM_TIMEOUT_SECONDS=15
+LLM_MAX_RETRIES=1
+```
+
+说明：
+- `LLM_BASE_URL` 可以填到 `/v1`，系统会自动补成 `/chat/completions`
+- `openai_compatible` 表示兼容 OpenAI 风格接口的模型服务，不限定 OpenAI 官方服务
+- 后续可以把 `LLM_BASE_URL / LLM_MODEL / LLM_API_KEY` 配成国产模型平台提供的兼容接口
+- 当前不提交任何真实密钥
+- 若 `LLM_BASE_URL`、`LLM_MODEL` 或 `LLM_API_KEY` 为空，会直接 fallback 到 `rule_based`
+- 若返回超时、非 200、非 JSON、字段缺失或结构不兼容，也会自动退回 `rule_based`
+- 当前不会在页面暴露密钥等敏感信息
 
 ## 中心化运营脚本
 查看用户：
@@ -106,36 +140,22 @@ py -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 http://127.0.0.1:8000/
 ```
 
-## LLM 最小接入配置
-```bash
-CONTENT_ENGINE_TYPE=llm_openai_compatible
-LLM_PROVIDER=openai_compatible
-LLM_API_KEY=your_api_key
-LLM_BASE_URL=https://your-openai-compatible-host/v1
-LLM_MODEL=your-model-name
-LLM_TIMEOUT_SECONDS=15
-LLM_MAX_RETRIES=1
-```
-
-说明：
-- `LLM_BASE_URL` 可以填到 `/v1`，系统会自动补成 `/chat/completions`
-- `openai_compatible` 表示兼容 OpenAI 风格接口的模型服务，不限定 OpenAI 官方服务
-- 后续可以把 `LLM_BASE_URL / LLM_MODEL / LLM_API_KEY` 配成国产模型平台提供的兼容接口
-- 当前不提交任何真实密钥
-- 若 `LLM_BASE_URL`、`LLM_MODEL` 或 `LLM_API_KEY` 为空，会直接 fallback 到 `rule_based`
-- 若返回超时、非 200、非 JSON、字段缺失或结构不兼容，也会自动退回 `rule_based`
-- 当前不会在页面暴露密钥等敏感信息
-
 ## 测试
 ```bash
 py -m pytest -q
 ```
 
+如果 Windows 临时目录权限有问题，可以使用：
+```bash
+py -m pytest -q --basetemp .tmp/pytest
+```
+
 ## /health 版本说明
-`/health` 返回的 `version` 优先读取 `APP_VERSION` 环境变量，代码默认值为 `v0.5-2`。
-如果 Render 线上 `/health` 仍显示旧版本，请检查 Render Environment 里的 `APP_VERSION`，改为 `v0.5-2` 或删除该环境变量后重新部署。
+`/health` 返回的 `version` 优先读取 `APP_VERSION` 环境变量，代码默认值为 `v0.5-3`。
+如果 Render 线上 `/health` 仍显示旧版本，请检查 Render Environment 里的 `APP_VERSION`，改为 `v0.5-3` 或删除该环境变量后重新部署。
 
 ## 版本记录
+- v0.5-3：增强 LLM 配置校验；新增 `scripts/check_llm_config.py`；优化国产模型 OpenAI-compatible prompt；增强 LLM JSON 清洗和结构校验；在配置缺失、超时、非法 JSON、schema 不完整等情况下继续 fallback 到 `rule_based`；`/health` 增加 LLM 配置状态摘要；不提交真实密钥，不默认启用 LLM。
 - v0.5-2：新增 `llm_content_service.py`；`CONTENT_ENGINE_TYPE` 新增 `llm_openai_compatible`；增加 OpenAI-compatible 风格 LLM 所需环境变量；通过 `content_engine_adapter.py` 统一接入规则文案与 LLM 文案；这里的 `openai_compatible` 指兼容 OpenAI 风格接口协议，而不是绑定 OpenAI 官方服务；后续可通过 `LLM_BASE_URL / LLM_MODEL / LLM_API_KEY` 接入国产模型平台；在密钥缺失、URL 无效、超时、非 JSON、字段不完整等情况下自动 fallback 到 `rule_based`；不影响图片生成、账号、额度、套餐、生成记录与运营脚本。
 - v0.5-1：新增 `content_engine_adapter.py`；新增 `CONTENT_ENGINE_TYPE` 配置；当前默认 `rule_based`；预留 `llm_placeholder` 大模型文案引擎占位；当前不接真实 OpenAI / DeepSeek / 通义千问 API；当前规则文案仍由 `content_generator.py + category_profile.py` 提供；未来可通过 adapter 接入大模型，失败时 fallback 到 `rule_based`；不影响图片生成、账号、额度、套餐、生成记录和运营脚本。
 - v0.4-3：新增或增强商品细分类目识别；食品饮品细分为烘焙糕点、饮品冲泡、零食小吃、代餐轻食；美妆护肤细分为护肤、彩妆、护手霜/身体护理、随身补涂；家居日用细分为杯壶水杯、收纳整理、清洁用品、桌面/通勤好物；标题、正文、标签和图片卖点统一根据细分类目调整；继续使用规则引擎，不接大模型。
