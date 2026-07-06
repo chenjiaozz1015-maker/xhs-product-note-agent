@@ -4,7 +4,7 @@
 上传商品图片、商品名称、商品类目和一句描述，自动生成小红书风格图片素材包与发布文案。
 
 ## 当前版本
-种草机 v0.5-3 LLM 配置校验版
+种草机 v0.5-4 LLM 连通测试版
 
 ## 在线试用
 https://zhongcaoji.onrender.com/
@@ -20,14 +20,13 @@ https://zhongcaoji.onrender.com/
 - 结果页支持下载、复制、编辑标题/正文/标签/评论引导
 - 当前内容生成已支持规则引擎与 OpenAI-compatible 风格 LLM 最小接入
 
-## v0.5-3 本轮增强
-- 增强 LLM 配置校验
-- 新增中心化部署下的 LLM 配置诊断脚本 `scripts/check_llm_config.py`
-- 优化面向国产兼容模型的 prompt 约束
-- 增强 LLM JSON 清洗与结构校验
-- 当 LLM 配置不完整或返回异常时继续 fallback 到 `rule_based`
-- `/health` 增加 LLM 配置状态摘要
-- 不提交真实密钥，不默认启用 LLM
+## v0.5-4 本轮增强
+- 新增 `scripts/smoke_check_llm.py`
+- 支持人工手动测试国产 OpenAI-compatible 模型接口连通性
+- smoke check 只生成文案测试结果
+- 不扣额度，不写生成记录，不生成图片
+- 不影响用户主流程，线上默认仍建议使用 `rule_based`
+- API Key 只做 masked 展示，不打印完整密钥
 
 ## 当前额度规则
 - `trial` 默认 10 次 / 30 天
@@ -74,6 +73,32 @@ python scripts/check_llm_config.py
 ```
 - 配置完整不代表真实 API 一定可用，这一轮只做本地配置诊断，不做真实外网连通测试
 - 若 LLM 失败，系统会自动 fallback 到 `rule_based`
+
+## LLM 手动连通测试
+先检查配置：
+```bash
+python scripts/check_llm_config.py
+```
+
+再手动 smoke check：
+```bash
+python scripts/smoke_check_llm.py
+```
+
+也可以传测试商品参数：
+```bash
+python scripts/smoke_check_llm.py --product-name "水牛奶蛋糕" --category "食品饮品" --description "适合早餐和下午茶，口感松软，适合家里囤一点" --content-type "真实测评" --style "温柔日常"
+```
+
+说明：
+- `check_llm_config.py`：只读配置检查，不请求外网
+- `smoke_check_llm.py`：手动连通测试，会请求一次模型接口
+- `SUCCESS` 表示模型返回结构可用
+- `FAILED` 表示请求或解析失败
+- `SKIPPED` 表示配置不完整，未发请求
+- smoke check 通过后，仍建议先本地观察，再考虑把 `CONTENT_ENGINE_TYPE` 切换到 `llm_openai_compatible`
+- 不要把真实 `API Key` 写入代码或提交到 Git
+- Render / 云平台通过环境变量配置即可
 
 ## LLM 最小接入配置
 ```bash
@@ -151,10 +176,11 @@ py -m pytest -q --basetemp .tmp/pytest
 ```
 
 ## /health 版本说明
-`/health` 返回的 `version` 优先读取 `APP_VERSION` 环境变量，代码默认值为 `v0.5-3`。
-如果 Render 线上 `/health` 仍显示旧版本，请检查 Render Environment 里的 `APP_VERSION`，改为 `v0.5-3` 或删除该环境变量后重新部署。
+`/health` 返回的 `version` 优先读取 `APP_VERSION` 环境变量，代码默认值为 `v0.5-4`。
+如果 Render 线上 `/health` 仍显示旧版本，请检查 Render Environment 里的 `APP_VERSION`，改为 `v0.5-4` 或删除该环境变量后重新部署。
 
 ## 版本记录
+- v0.5-4：新增 `scripts/smoke_check_llm.py`；支持人工手动测试国产 OpenAI-compatible 模型接口连通性；smoke check 只生成文案测试结果，不扣额度、不写生成记录、不生成图片；不影响用户主流程；API Key 只做 masked 展示；线上默认仍建议使用 `rule_based`。
 - v0.5-3：增强 LLM 配置校验；新增 `scripts/check_llm_config.py`；优化国产模型 OpenAI-compatible prompt；增强 LLM JSON 清洗和结构校验；在配置缺失、超时、非法 JSON、schema 不完整等情况下继续 fallback 到 `rule_based`；`/health` 增加 LLM 配置状态摘要；不提交真实密钥，不默认启用 LLM。
 - v0.5-2：新增 `llm_content_service.py`；`CONTENT_ENGINE_TYPE` 新增 `llm_openai_compatible`；增加 OpenAI-compatible 风格 LLM 所需环境变量；通过 `content_engine_adapter.py` 统一接入规则文案与 LLM 文案；这里的 `openai_compatible` 指兼容 OpenAI 风格接口协议，而不是绑定 OpenAI 官方服务；后续可通过 `LLM_BASE_URL / LLM_MODEL / LLM_API_KEY` 接入国产模型平台；在密钥缺失、URL 无效、超时、非 JSON、字段不完整等情况下自动 fallback 到 `rule_based`；不影响图片生成、账号、额度、套餐、生成记录与运营脚本。
 - v0.5-1：新增 `content_engine_adapter.py`；新增 `CONTENT_ENGINE_TYPE` 配置；当前默认 `rule_based`；预留 `llm_placeholder` 大模型文案引擎占位；当前不接真实 OpenAI / DeepSeek / 通义千问 API；当前规则文案仍由 `content_generator.py + category_profile.py` 提供；未来可通过 adapter 接入大模型，失败时 fallback 到 `rule_based`；不影响图片生成、账号、额度、套餐、生成记录和运营脚本。
