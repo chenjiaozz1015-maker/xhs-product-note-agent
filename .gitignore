@@ -13,3 +13,6 @@ app/static/uploads/*
 
 app/static/generated/*
 !app/static/generated/.gitkeep
+content_eval*.md
+content_eval*.json
+compare_result*.json
