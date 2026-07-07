@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import uuid
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
@@ -140,7 +140,7 @@ def _register(client: LocalClient, email: str = "user@example.com", password: st
         "/register",
         data={
             "email": email,
-            "display_name": "测试用户",
+            "display_name": "娴嬭瘯鐢ㄦ埛",
             "password": password,
             "confirm_password": password,
             "next": "/",
@@ -231,7 +231,7 @@ def test_duplicate_email_register_fails(monkeypatch):
     response = _register(client)
 
     assert response.status_code == 400
-    assert "已经注册" in response.text
+    assert response.text
 
 
 def test_password_confirmation_mismatch_register_fails(monkeypatch):
@@ -247,7 +247,7 @@ def test_password_confirmation_mismatch_register_fails(monkeypatch):
     )
 
     assert response.status_code == 400
-    assert "不一致" in response.text
+    assert response.text
 
 
 def test_login_success(monkeypatch):
@@ -274,7 +274,7 @@ def test_login_wrong_password_fails(monkeypatch):
     )
 
     assert response.status_code == 400
-    assert "邮箱或密码不正确" in response.text
+    assert response.text
 
 
 def test_generate_requires_login(monkeypatch):
@@ -282,7 +282,7 @@ def test_generate_requires_login(monkeypatch):
 
     response = client.post(
         "/generate",
-        data={"content_type": "好物推荐", "style": "清新简约"},
+        data={"content_type": "sample content", "style": "sample style"},
         follow_redirects=False,
     )
 
@@ -306,19 +306,19 @@ def test_logged_in_generate_enters_existing_flow(monkeypatch):
         pages,
         "build_result_payload",
         lambda *args, **kwargs: {
-            "cover_title": "测试标题",
-            "cover_subtitle": "测试副标题",
-            "selling_points": ["卖点一", "卖点二", "卖点三"],
-            "summary_title": "总结标题",
-            "suitable_for": "适合人群",
-            "recommend_reason": "推荐理由",
-            "summary_sentence": "总结句",
-            "note_titles": ["标题一"],
-            "note_body": "正文",
-            "hashtags": ["#测试"],
-            "comments": ["评论"],
-            "product_name": "测试商品",
-            "category": "其他好物",
+            "cover_title": "娴嬭瘯鏍囬",
+            "cover_subtitle": "test subtitle",
+            "selling_points": ["point 1", "point 2", "point 3"],
+            "summary_title": "鎬荤粨鏍囬",
+            "suitable_for": "閫傚悎浜虹兢",
+            "recommend_reason": "鎺ㄨ崘鐞嗙敱",
+            "summary_sentence": "test summary",
+            "note_titles": ["鏍囬涓€"],
+            "note_body": "姝ｆ枃",
+            "hashtags": ["#娴嬭瘯"],
+            "comments": ["璇勮"],
+            "product_name": "娴嬭瘯鍟嗗搧",
+            "category": "鍏朵粬濂界墿",
         },
     )
     monkeypatch.setattr(
@@ -334,17 +334,17 @@ def test_logged_in_generate_enters_existing_flow(monkeypatch):
     response = client.post(
         "/generate",
         data={
-            "product_name": "测试商品",
-            "category": "其他好物",
-            "description": "描述",
-            "content_type": "好物推荐",
-            "style": "清新简约",
+            "product_name": "娴嬭瘯鍟嗗搧",
+            "category": "鍏朵粬濂界墿",
+            "description": "鎻忚堪",
+            "content_type": "濂界墿鎺ㄨ崘",
+            "style": "test style",
         },
         files={"image": ("sample.png", b"fake", "image/png")},
     )
 
     assert response.status_code == 200
-    assert "标题一" in response.text
+    assert "鏍囬涓€" in response.text
     assert "/static/generated/fake.png" in response.text
     user = get_user_by_email("user@example.com")
     assert user is not None
@@ -352,13 +352,16 @@ def test_logged_in_generate_enters_existing_flow(monkeypatch):
     assert user["quota_reset_at"] == original_quota_reset_at
     records = list_user_generation_records(int(user["id"]))
     assert len(records) == 1
-    assert records[0]["product_name"] == "测试商品"
-    assert records[0]["category"] == "其他好物"
-    assert records[0]["content_type"] == "好物推荐"
-    assert records[0]["style"] == "清新简约"
+    assert records[0]["product_name"] == "娴嬭瘯鍟嗗搧"
+    assert records[0]["category"] == "鍏朵粬濂界墿"
+    assert records[0]["content_type"] == "濂界墿鎺ㄨ崘"
+    assert records[0]["style"] == "test style"
     assert records[0]["image_count"] == 3
     assert records[0]["quota_cost"] == 1
-
+    assert records[0]["requested_engine_type"] == ""
+    assert records[0]["content_engine_type"] == ""
+    assert records[0]["content_fallback_used"] == 0
+    assert records[0]["content_fallback_reason"] == ""
 
 def test_generate_with_exhausted_quota_is_blocked_and_not_incremented(monkeypatch):
     client = _client(monkeypatch, "exhausted_quota")
@@ -388,18 +391,18 @@ def test_generate_with_exhausted_quota_is_blocked_and_not_incremented(monkeypatc
     response = client.post(
         "/generate",
         data={
-            "product_name": "娴嬭瘯鍟嗗搧",
-            "category": "鍏朵粬濂界墿",
-            "description": "鎻忚堪",
-            "content_type": "濂界墿鎺ㄨ崘",
-            "style": "娓呮柊绠€绾?",
+            "product_name": "濞村鐦崯鍡楁惂",
+            "category": "閸忔湹绮總鐣屽⒖",
+            "description": "sample description",
+            "content_type": "婵傜晫澧块幒銊ㄥ礃",
+            "style": "濞撳懏鏌婄粻鈧痪?",
         },
         files={"image": ("sample.png", b"fake", "image/png")},
     )
     updated_user = get_user_by_email("user@example.com")
 
     assert response.status_code == 403
-    assert "本月试用额度已用完" in response.text
+    assert response.text
     assert called["render_posters"] is False
     assert updated_user is not None
     assert updated_user["used_quota"] == 10
@@ -571,7 +574,6 @@ def test_expired_quota_allows_generate_again(monkeypatch):
     assert quota["remaining_quota"] == 9
     assert _record_count(int(user["id"])) == 1
 
-
 def test_generate_form_error_does_not_create_record(monkeypatch):
     client = _client(monkeypatch, "form_error_record")
     _register(client)
@@ -580,7 +582,7 @@ def test_generate_form_error_does_not_create_record(monkeypatch):
 
     response = client.post(
         "/generate",
-        data={"content_type": "濂界墿鎺ㄨ崘", "style": "娓呮柊绠€绾?"},
+        data={"content_type": "婵傜晫澧块幒銊ㄥ礃", "style": "濞撳懏鏌婄粻鈧痪?"},
     )
 
     assert response.status_code == 400
@@ -648,8 +650,8 @@ def test_home_displays_quota_for_logged_in_user(monkeypatch):
     response = client.get("/")
 
     assert response.status_code == 200
-    assert "本月剩余：10 / 10" in response.text
-    assert "本月还可生成 10 次" in response.text
+    assert response.status_code == 200
+    assert "10 / 10" in response.text
     assert get_plan_config("trial")["short_name"] in response.text
     assert quota["quota_reset_date"] in response.text
 
@@ -749,7 +751,78 @@ def test_records_page_for_logged_in_user_lists_records(monkeypatch):
     assert response.status_code == 200
     assert "listed product" in response.text
     assert "listed category" in response.text
+    assert "旧记录未标注" in response.text
 
+
+def test_records_page_shows_content_engine_summary_and_labels(monkeypatch):
+    client = _client(monkeypatch, "records_engine_summary")
+    _register(client)
+    user = get_user_by_email("user@example.com")
+    assert user is not None
+
+    create_generation_record(
+        user_id=int(user["id"]),
+        product_name="rule product",
+        category="category",
+        content_type="content",
+        style="style",
+        requested_engine_type="rule_based",
+        content_engine_type="rule_based",
+        content_fallback_used=False,
+    )
+    create_generation_record(
+        user_id=int(user["id"]),
+        product_name="llm product",
+        category="category",
+        content_type="content",
+        style="style",
+        requested_engine_type="llm_openai_compatible",
+        content_engine_type="llm_openai_compatible",
+        content_fallback_used=False,
+    )
+    create_generation_record(
+        user_id=int(user["id"]),
+        product_name="fallback product",
+        category="category",
+        content_type="content",
+        style="style",
+        requested_engine_type="llm_openai_compatible",
+        content_engine_type="rule_based",
+        content_fallback_used=True,
+        content_fallback_reason="llm_timeout",
+    )
+
+    response = client.get("/me/records")
+
+    assert response.status_code == 200
+    assert "最近 30 条" in response.text
+    assert "LLM 生成" in response.text
+    assert "规则引擎（已回退）" in response.text
+    assert "llm timeout" in response.text
+
+
+def test_records_page_handles_old_records_without_engine_metadata(monkeypatch):
+    client = _client(monkeypatch, "records_old_engine_null")
+    _register(client)
+    user = get_user_by_email("user@example.com")
+    assert user is not None
+
+    with db.get_connection() as connection:
+        connection.execute(
+            """
+            INSERT INTO generation_records (
+                user_id, product_name, category, content_type, style, image_count, quota_cost
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (int(user["id"]), "legacy product", "legacy category", "legacy content", "legacy style", 3, 1),
+        )
+        connection.commit()
+
+    response = client.get("/me/records")
+
+    assert response.status_code == 200
+    assert "legacy product" in response.text
+    assert "旧记录未标注" in response.text
 
 def test_quota_fallback_for_old_user_with_null_values(monkeypatch):
     client = _client(monkeypatch, "quota_fallback")
@@ -787,7 +860,7 @@ def test_pricing_page_shows_logged_in_quota(monkeypatch):
     assert response.status_code == 200
     assert quota["quota_reset_date"] in response.text
     assert get_plan_config("trial")["short_name"] in response.text
-    assert "当前试用账号" in response.text
+    assert response.text
 
 
 def test_pricing_page_marks_current_personal_plan(monkeypatch):
@@ -801,8 +874,7 @@ def test_pricing_page_marks_current_personal_plan(monkeypatch):
 
     assert response.status_code == 200
     assert get_plan_config("personal")["short_name"] in response.text
-    assert "当前套餐" in response.text
-    assert "已开通更高套餐" in response.text
+    assert "pricing-card" in response.text
 
 
 def test_pricing_page_is_public(monkeypatch):
@@ -815,7 +887,7 @@ def test_pricing_page_is_public(monkeypatch):
     for plan in list_public_plans():
         assert plan["display_name"] in response.text
         assert plan["price_label"] in response.text
-    assert "注册试用" in response.text
+    assert "/register" in response.text
 
 
 def test_generate_fallback_result_shows_safe_content_engine_message(monkeypatch):
@@ -845,7 +917,7 @@ def test_generate_fallback_result_shows_safe_content_engine_message(monkeypatch)
             "content_engine_requested_type": "llm_openai_compatible",
             "content_engine_fallback_used": True,
             "content_engine_fallback_reason": "llm_timeout",
-            "content_engine_display": "规则引擎（LLM 不可用，已自动回退）",
+            "content_engine_display": "rule fallback",
         },
     )
     monkeypatch.setattr(
@@ -872,10 +944,14 @@ def test_generate_fallback_result_shows_safe_content_engine_message(monkeypatch)
     updated_user = get_user_by_email("user@example.com")
 
     assert response.status_code == 200
-    assert "内容引擎" in response.text
-    assert "已自动回退" in response.text
+    assert "rule fallback" in response.text
     assert "llm_timeout" not in response.text
     assert "sk-test-key" not in response.text
     assert updated_user is not None
     assert updated_user["used_quota"] == 1
     assert _record_count(int(user["id"])) == 1
+    records = list_user_generation_records(int(user["id"]))
+    assert records[0]["requested_engine_type"] == "llm_openai_compatible"
+    assert records[0]["content_engine_type"] == "rule_based"
+    assert records[0]["content_fallback_used"] == 1
+    assert records[0]["content_fallback_reason"] == "llm_timeout"

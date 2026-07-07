@@ -136,6 +136,10 @@ async def generate(
             style=style,
             image_count=3,
             quota_cost=1,
+            requested_engine_type=str(result_payload.get("content_engine_requested_type", "")),
+            content_engine_type=str(result_payload.get("content_engine_type", "")),
+            content_fallback_used=bool(result_payload.get("content_engine_fallback_used")),
+            content_fallback_reason=str(result_payload.get("content_engine_fallback_reason", "")),
         )
         return templates.TemplateResponse(
             "result.html",

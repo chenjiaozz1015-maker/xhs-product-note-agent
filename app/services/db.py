@@ -34,6 +34,10 @@ CREATE TABLE IF NOT EXISTS generation_records (
     style TEXT,
     image_count INTEGER NOT NULL DEFAULT 3,
     quota_cost INTEGER NOT NULL DEFAULT 1,
+    requested_engine_type TEXT,
+    content_engine_type TEXT,
+    content_fallback_used INTEGER NOT NULL DEFAULT 0,
+    content_fallback_reason TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
 )
@@ -66,4 +70,18 @@ def init_db(database_path: Path | str | None = None) -> None:
         if "quota_reset_at" not in user_columns:
             connection.execute("ALTER TABLE users ADD COLUMN quota_reset_at TEXT")
         connection.execute(GENERATION_RECORDS_TABLE_SQL)
+        record_columns = {
+            row["name"] for row in connection.execute("PRAGMA table_info(generation_records)").fetchall()
+        }
+        record_column_statements = {
+            "requested_engine_type": "ALTER TABLE generation_records ADD COLUMN requested_engine_type TEXT",
+            "content_engine_type": "ALTER TABLE generation_records ADD COLUMN content_engine_type TEXT",
+            "content_fallback_used": (
+                "ALTER TABLE generation_records ADD COLUMN content_fallback_used INTEGER NOT NULL DEFAULT 0"
+            ),
+            "content_fallback_reason": "ALTER TABLE generation_records ADD COLUMN content_fallback_reason TEXT",
+        }
+        for column_name, statement in record_column_statements.items():
+            if column_name not in record_columns:
+                connection.execute(statement)
         connection.commit()

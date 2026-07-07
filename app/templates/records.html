@@ -41,6 +41,24 @@
           <span>下次重置</span>
           <strong>{{ quota.quota_reset_date }}</strong>
         </div>
+        {% if record_summary %}
+        <div class="card records-summary-card">
+          <span>最近 30 条</span>
+          <strong>{{ record_summary.total }} 条</strong>
+        </div>
+        <div class="card records-summary-card">
+          <span>LLM 生成</span>
+          <strong>{{ record_summary.llm_count }} 条</strong>
+        </div>
+        <div class="card records-summary-card">
+          <span>规则引擎</span>
+          <strong>{{ record_summary.rule_based_count }} 条</strong>
+        </div>
+        <div class="card records-summary-card">
+          <span>自动回退</span>
+          <strong>{{ record_summary.fallback_count }} 条</strong>
+        </div>
+        {% endif %}
       </section>
       {% endif %}
 
@@ -55,6 +73,7 @@
                 <th>类目</th>
                 <th>内容类型</th>
                 <th>风格</th>
+                <th>内容引擎</th>
                 <th>消耗额度</th>
               </tr>
             </thead>
@@ -66,6 +85,14 @@
                 <td data-label="类目">{{ record.category }}</td>
                 <td data-label="内容类型">{{ record.content_type }}</td>
                 <td data-label="风格">{{ record.style }}</td>
+                <td data-label="内容引擎">
+                  <div class="records-engine-cell">
+                    <strong>{{ record.content_engine_label }}</strong>
+                    {% if record.content_engine_reason %}
+                    <span>{{ record.content_engine_reason }}</span>
+                    {% endif %}
+                  </div>
+                </td>
                 <td data-label="消耗额度">消耗 {{ record.quota_cost }} 次</td>
               </tr>
               {% endfor %}
@@ -81,7 +108,7 @@
         {% endif %}
       </section>
 
-      <p class="version-note">种草机 {{ app_version }} LLM 灰度启用准备版</p>
+      <p class="version-note">种草机 {{ app_version }} 内容引擎记录版</p>
     </main>
   </body>
 </html>

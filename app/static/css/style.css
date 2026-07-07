@@ -1275,6 +1275,24 @@ button, .secondary-btn, .copy-btn, .btn {
   border-bottom: 0;
 }
 
+.records-engine-cell {
+  display: grid;
+  gap: 4px;
+}
+
+.records-engine-cell strong {
+  color: var(--home-ink);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.records-engine-cell span {
+  color: var(--home-muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  text-transform: none;
+}
+
 .records-empty {
   display: grid;
   gap: 10px;

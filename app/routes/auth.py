@@ -17,7 +17,11 @@ from app.services.auth_service import (
     logout_user,
 )
 from app.services.plan_service import get_default_trial_plan, list_public_plans
-from app.services.record_service import list_user_generation_records
+from app.services.record_service import (
+    get_record_content_engine_label,
+    list_user_generation_records,
+    summarize_record_engines,
+)
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parents[1] / "templates"))
@@ -136,9 +140,17 @@ async def my_records(request: Request):
         return RedirectResponse("/login?next=/me/records&login_required=1", status_code=303)
 
     records = list_user_generation_records(int(current_user["id"]), limit=30)
+    record_summary = summarize_record_engines(records)
+    enriched_records = []
+    for record in records:
+        enriched_record = dict(record)
+        enriched_record["content_engine_label"] = get_record_content_engine_label(record)
+        fallback_reason = str(record.get("content_fallback_reason") or "").strip()
+        enriched_record["content_engine_reason"] = fallback_reason.replace("_", " ") if fallback_reason else ""
+        enriched_records.append(enriched_record)
     return templates.TemplateResponse(
         "records.html",
-        _auth_context(request, records=records),
+        _auth_context(request, records=enriched_records, record_summary=record_summary),
     )
 
 
