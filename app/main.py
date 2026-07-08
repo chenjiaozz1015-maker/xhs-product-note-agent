@@ -21,6 +21,7 @@ from app.config import (
 from app.middleware.session import SignedCookieSessionMiddleware
 from app.routes.auth import router as auth_router
 from app.routes.pages import router as pages_router
+from app.services.config_center_client import get_config_center_settings, get_runtime_token_summary
 from app.services.image_composer import get_cjk_font_path
 from app.services.llm_content_service import get_llm_config_status
 
@@ -35,6 +36,8 @@ app.include_router(pages_router)
 async def health() -> dict:
     font_path = get_cjk_font_path()
     llm_status = get_llm_config_status(CONTENT_ENGINE_TYPE)
+    config_center_settings = get_config_center_settings()
+    runtime_token_summary = get_runtime_token_summary()
     return {
         "status": "ok",
         "app": "zhongcaoji",
@@ -50,4 +53,7 @@ async def health() -> dict:
         "js_file_exists": (STATIC_DIR / "js" / "app.js").exists(),
         "font_file_exists": font_path is not None,
         "font_path": str(font_path) if font_path else None,
+        "config_center_project_code": config_center_settings["project_code"],
+        "config_center_env": config_center_settings["env"],
+        "config_center_runtime_token_ready": runtime_token_summary["runtime_token_ready"],
     }

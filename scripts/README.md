@@ -4,10 +4,11 @@
 - 请在项目根目录运行脚本
 - 不要提交 `.env`
 - 不要提交 `data/zhongcaoji.db`
-- 不要把真实 API Key 或真实 inviteCode 写进代码、README 或 `.env.example`
+- 不要把真实 API Key、真实 inviteCode 或真实 runtimeConfigToken 写进代码、README 或 `.env.example`
 - 线上默认建议保持 `CONTENT_ENGINE_TYPE=rule_based`
 - 只有 `smoke_check_llm.py`、`compare_content_engines.py`、`batch_evaluate_content.py` 会在 LLM 配置完整时请求模型接口
 - `bootstrap_config_center.py` 只有在传 `--yes` 且 `CONFIG_CENTER_INVITE_CODE` 存在时才会请求内部 config-center 接口
+- `check_config_center_runtime.py` 会请求 config-center 的 runtime-config 接口
 - 其他脚本默认只读或只做本地数据库操作
 
 ## 脚本清单
@@ -22,6 +23,7 @@
 | `batch_evaluate_content.py` | 多个样例批量评测 `rule_based` 和 LLM 文案 | 是，配置完整时会请求模型接口 | 否 | `python scripts/batch_evaluate_content.py --format markdown --output content_eval.md` | 做小样本批量质量对比 |
 | `engine_usage_report.py` | 查看 `generation_records` 的内容引擎使用统计 | 否 | 否，只读 | `python scripts/engine_usage_report.py --limit 50` | LLM 启用后观察实际命中和 fallback |
 | `bootstrap_config_center.py` | 调用内部 config-center bootstrap 接口初始化项目配置 | 只有 `--yes` 且 inviteCode 存在时会请求 | 否 | `python scripts/bootstrap_config_center.py --dry-run` | 首次初始化配置中心项目 |
+| `check_config_center_runtime.py` | 检查 runtime token 文件并请求一次 runtime-config | 是，会请求 config-center | 否 | `python scripts/check_config_center_runtime.py` | 手动验证配置中心运行时读取是否正常 |
 | `list_ops_tools.py` | 打印运营脚本入口和常用命令索引 | 否 | 否 | `python scripts/list_ops_tools.py` | 快速查“该用哪个脚本” |
 
 ## 配置中心初始化
@@ -34,12 +36,32 @@ python scripts/bootstrap_config_center.py --yes
 
 说明：
 - 只有传 `--yes` 且 `CONFIG_CENTER_INVITE_CODE` 存在时，才会请求内部 config-center 接口
+- 成功后会尝试写入 `.config-center/test.runtime-token.json`
+- `--overwrite-token` 可覆盖已有 token 文件
 - 不会修改数据库
 - 不会扣额度
 - 不会写 `generation_records`
 - 不会生成图片
 - 不要提交真实 inviteCode
+- 不要提交 token 文件
 - `bootstrap` 是初始化动作，不建议重复执行
+
+## 配置中心 runtime-config 读取
+手动检查：
+
+```bash
+python scripts/check_config_center_runtime.py
+```
+
+说明：
+- 这个脚本会读取 `.config-center/test.runtime-token.json`
+- 它会请求一次 config-center 的 runtime-config 接口
+- 它不会修改数据库
+- 它不会扣额度
+- 它不会写 `generation_records`
+- 它不会生成图片
+- 它不会修改 `CONTENT_ENGINE_TYPE`
+- 它只打印 `config keys`，不会打印完整 `runtimeConfigToken` 或完整敏感配置值
 
 ## 常见操作流程
 

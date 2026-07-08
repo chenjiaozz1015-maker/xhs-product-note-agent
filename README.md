@@ -4,7 +4,7 @@
 上传商品图片、商品名称、商品类目和一句描述，自动生成小红书风格图片素材包与发布文案。
 
 ## 当前版本
-种草机 v0.6-6 配置中心接入预留版
+种草机 v0.6-7 配置中心读取版
 
 ## 在线试用
 https://zhongcaoji.onrender.com/
@@ -20,17 +20,17 @@ https://zhongcaoji.onrender.com/
 - 结果页支持下载、复制、编辑标题/正文/标签/评论引导
 - 当前内容生成已支持规则引擎与 OpenAI-compatible 风格 LLM 最小接入
 
-## v0.6-6 本轮增强
-- 增强 `scripts/bootstrap_config_center.py`
-- `bootstrap` 默认增加确认保护
-- 支持 `--dry-run`
-- 支持 `--yes` 后确认执行
-- 新增 `docs/config_center_integration.md`
-- 记录 `zhongcaoji` config-center bootstrap 状态
-- 预留 `config_center_client` 服务层
-- 不实现未知配置读取接口
+## v0.6-7 本轮增强
+- 接入 config-center 的 runtime-config 读取能力
+- 从 `.config-center/test.runtime-token.json` 读取 `runtimeConfigToken`
+- 使用 `X-Project-Config-Token` 调用 runtime-config 接口
+- 新增 `scripts/check_config_center_runtime.py`
+- `/health` 增加 config-center token 安全摘要
+- 不再使用 `inviteCode` 读取运行时配置
+- bootstrap 不需要重复执行
+- 不把 config-center 配置直接切进 LLM
+- 不改 `CONTENT_ENGINE_TYPE`
 - 不改正式生成流程
-- 不改 LLM 当前环境变量逻辑
 
 ## 当前额度规则
 - `trial` 默认 10 次 / 30 天
@@ -311,10 +311,21 @@ docs/config_center_integration.md
 ```
 
 ## 配置中心接入状态
-- 当前已完成 `projectCode=zhongcaoji` 的 bootstrap
+- 当前已完成 `projectCode=zhongcaoji` 的 bootstrap，不要重复执行
+- `inviteCode` 只用于首次 bootstrap，不用于运行时读取配置
+- 运行时读取配置使用 `.config-center/test.runtime-token.json` 里的 `runtimeConfigToken`
+- 如果 `check_config_center_runtime.py` 提示 `runtime_token_file_missing`，重新执行：
+```bash
+python scripts/bootstrap_config_center.py --yes
+```
+- bootstrap 成功后会自动写入 `.config-center/test.runtime-token.json`
+- 手动检查：
+```bash
+python scripts/check_config_center_runtime.py
+```
+- 当前 runtime-config 是基础项目配置，不是完整能力配置
 - 当前线上仍使用 Render 环境变量和本地环境变量作为配置来源
-- 后续如果要从配置中心读取 LLM 配置，还需要补充配置读取接口文档
-- 在读取接口明确前，`CONTENT_ENGINE_TYPE`、`LLM_BASE_URL`、`LLM_MODEL`、`LLM_API_KEY` 继续沿用环境变量逻辑
+- 当前不把 runtime-config 直接切进正式 LLM 配置来源
 
 ## 中心化运营脚本
 查看用户：
@@ -372,7 +383,7 @@ py -m pytest -q --basetemp .tmp/pytest
 ```
 
 ## /health 版本说明
-`/health` 返回的 `version` 默认读取 `app/config.py` 里的代码版本，当前默认值为 `v0.6-6`。
+`/health` 返回的 `version` 默认读取 `app/config.py` 里的代码版本，当前默认值为 `v0.6-7`。
 `APP_VERSION` 只作为可选覆盖项。
 
 部署建议：
@@ -383,6 +394,7 @@ py -m pytest -q --basetemp .tmp/pytest
 如果 Render 线上 `/health` 仍显示旧版本，优先检查 Render Environment 里是否配置过 `APP_VERSION`；如果配过，建议删除该环境变量后重新部署，让版本号回到代码默认值。
 
 ## 版本记录
+- v0.6-7：接入 config-center runtime-config 读取能力；从 `.config-center/test.runtime-token.json` 读取 `runtimeConfigToken`；使用 `X-Project-Config-Token` 调用 runtime-config 接口；新增 `scripts/check_config_center_runtime.py`；`/health` 增加 config-center token 安全摘要；不再使用 `inviteCode` 读取运行时配置；bootstrap 不需要重复执行；不把 config-center 配置直接切进 LLM；不改 `CONTENT_ENGINE_TYPE`；不改正式生成流程；不暴露 `runtimeConfigToken`。
 - v0.6-6：增强 `scripts/bootstrap_config_center.py`；`bootstrap` 默认增加确认保护；支持 `--dry-run` 和 `--yes`；新增 `docs/config_center_integration.md`；记录 `zhongcaoji` config-center bootstrap 状态；预留 `config_center_client` 服务层；当前不实现未知配置读取接口；不改正式生成流程；不改 LLM 当前环境变量逻辑；不暴露 inviteCode 或 API Key。
 - v0.6-5：新增 `scripts/README.md`；新增 `scripts/list_ops_tools.py`；统一整理运营脚本用途、风险边界和常用命令；明确哪些脚本会请求 LLM 外网接口，哪些脚本会修改数据库；补充用户套餐操作、LLM 启用前检查、LLM 启用后观察流程；不改正式生成流程；默认线上仍建议保持 `CONTENT_ENGINE_TYPE=rule_based`。
 - v0.6-4：新增 `scripts/engine_usage_report.py`；支持按最近 N 条记录、按邮箱过滤查看内容引擎使用情况；支持统计 `rule_based / llm_openai_compatible / fallback / unknown` 和 `fallback_reason` 分布；支持 `text / json` 输出；脚本只读数据库，不扣额度、不写记录、不请求外网；默认线上仍建议保持 `CONTENT_ENGINE_TYPE=rule_based`。

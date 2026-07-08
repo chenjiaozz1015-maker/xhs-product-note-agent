@@ -32,6 +32,8 @@ Config center:
 bootstrap_config_center.py
 dry run: python scripts/bootstrap_config_center.py --dry-run
 bootstrap: python scripts/bootstrap_config_center.py --yes
+check_config_center_runtime.py
+runtime check: python scripts/check_config_center_runtime.py
 
 Docs:
 

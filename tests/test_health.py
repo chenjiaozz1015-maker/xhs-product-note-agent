@@ -10,11 +10,15 @@ def test_health_returns_version_and_directory_status():
     assert payload["status"] == "ok"
     assert payload["app"] == "zhongcaoji"
     assert payload["version"] == APP_VERSION
-    assert payload["version"] == "v0.6-6"
+    assert payload["version"] == "v0.6-7"
     assert payload["content_engine_type"]
     assert payload["poster_engine_type"]
     assert payload["llm_provider"] == "openai_compatible"
     assert "llm_config_ready" in payload
+    assert payload["config_center_project_code"] == "zhongcaoji"
+    assert payload["config_center_env"] == "test"
+    assert "config_center_runtime_token_ready" in payload
+    assert "runtimeConfigToken" not in payload
     assert payload["uploads_dir_exists"] is True
     assert payload["generated_dir_exists"] is True
     assert payload["static_dir_exists"] is True

@@ -16,3 +16,7 @@ app/static/generated/*
 content_eval*.md
 content_eval*.json
 compare_result*.json
+.config-center/*.runtime-token.json
+.config-center/*.token.json
+.config-center/.runtime-token.json
+.config-center/.token.json
