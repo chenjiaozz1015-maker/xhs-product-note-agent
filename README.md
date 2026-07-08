@@ -4,7 +4,7 @@
 上传商品图片、商品名称、商品类目和一句描述，自动生成小红书风格图片素材包与发布文案。
 
 ## 当前版本
-种草机 v0.6-4 内容引擎观察版
+种草机 v0.6-5 运营脚本整理版
 
 ## 在线试用
 https://zhongcaoji.onrender.com/
@@ -20,15 +20,15 @@ https://zhongcaoji.onrender.com/
 - 结果页支持下载、复制、编辑标题/正文/标签/评论引导
 - 当前内容生成已支持规则引擎与 OpenAI-compatible 风格 LLM 最小接入
 
-## v0.6-4 本轮增强
-- 新增 `scripts/engine_usage_report.py`
-- 支持查看最近 N 条 `generation_records` 的内容引擎使用情况
-- 支持统计 `rule_based / llm_openai_compatible / fallback / unknown` 数量
-- 支持统计 `fallback_reason` 分布
-- 支持按 `--email` 过滤和 `--format json` 输出
-- 脚本只读数据库，不扣额度、不写记录、不请求外网
+## v0.6-5 本轮增强
+- 新增 `scripts/README.md`
+- 新增 `scripts/list_ops_tools.py`
+- 统一整理运营脚本用途、风险边界和常用命令
+- 明确哪些脚本会请求 LLM 外网接口
+- 明确哪些脚本会修改数据库
+- 补充用户套餐操作、LLM 启用前检查、LLM 启用后观察的操作流程
+- 不改正式生成流程
 - 默认线上仍建议保持 `CONTENT_ENGINE_TYPE=rule_based`
-- Render 仍建议不要配置 `APP_VERSION`，版本号默认跟随代码版本
 
 ## 当前额度规则
 - `trial` 默认 10 次 / 30 天
@@ -281,6 +281,21 @@ LLM_MAX_RETRIES=1
 - 若返回超时、非 200、非 JSON、字段缺失或结构不兼容，也会自动退回 `rule_based`
 - 当前不会在页面暴露密钥等敏感信息
 
+## 运营脚本入口
+查看所有运营脚本：
+```bash
+python scripts/list_ops_tools.py
+```
+
+详细脚本说明：
+```text
+scripts/README.md
+```
+
+LLM 灰度启用手册：
+```text
+docs/llm_rollout_runbook.md
+```
 ## 中心化运营脚本
 查看用户：
 ```bash
@@ -337,7 +352,7 @@ py -m pytest -q --basetemp .tmp/pytest
 ```
 
 ## /health 版本说明
-`/health` 返回的 `version` 默认读取 `app/config.py` 里的代码版本，当前默认值为 `v0.6-4`。
+`/health` 返回的 `version` 默认读取 `app/config.py` 里的代码版本，当前默认值为 `v0.6-5`。
 `APP_VERSION` 只作为可选覆盖项。
 
 部署建议：
@@ -348,7 +363,7 @@ py -m pytest -q --basetemp .tmp/pytest
 如果 Render 线上 `/health` 仍显示旧版本，优先检查 Render Environment 里是否配置过 `APP_VERSION`；如果配过，建议删除该环境变量后重新部署，让版本号回到代码默认值。
 
 ## 版本记录
-- v0.6-4：新增 `scripts/engine_usage_report.py`；支持按最近 N 条记录、按邮箱过滤查看内容引擎使用情况；支持统计 `rule_based / llm_openai_compatible / fallback / unknown` 和 `fallback_reason` 分布；支持 `text / json` 输出；脚本只读数据库，不扣额度、不写记录、不请求外网；默认线上仍建议保持 `CONTENT_ENGINE_TYPE=rule_based`。
+- v0.6-5：新增 `scripts/README.md`；新增 `scripts/list_ops_tools.py`；统一整理运营脚本用途、风险边界和常用命令；明确哪些脚本会请求 LLM 外网接口，哪些脚本会修改数据库；补充用户套餐操作、LLM 启用前检查、LLM 启用后观察流程；不改正式生成流程；默认线上仍建议保持 `CONTENT_ENGINE_TYPE=rule_based`。`r`n- v0.6-4：新增 `scripts/engine_usage_report.py`；支持按最近 N 条记录、按邮箱过滤查看内容引擎使用情况；支持统计 `rule_based / llm_openai_compatible / fallback / unknown` 和 `fallback_reason` 分布；支持 `text / json` 输出；脚本只读数据库，不扣额度、不写记录、不请求外网；默认线上仍建议保持 `CONTENT_ENGINE_TYPE=rule_based`。
 - v0.6-3：`generation_records` 新增内容引擎使用记录字段；旧数据库自动补齐缺失列；成功生成后记录 requested / actual / fallback 元信息；`/me/records` 新增最近 30 条内容引擎摘要与每条记录的来源显示；旧记录空字段安全兼容；仍然只扣 1 次额度、只写 1 条生成记录；Render 仍建议不要配置 `APP_VERSION`。
 - v0.6-2：新增 `docs/llm_rollout_runbook.md`；新增 `scripts/preflight_llm_rollout.py`；明确 LLM 灰度启用前检查流程、Render 环境变量启用方式、启用后观察项和快速回退到 `rule_based` 的方式；默认仍为 `rule_based`；不请求外网，不扣额度，不写记录，不生成图片，不修改数据库；不提交真实 API Key。
 - v0.6-1：正式生成流程支持通过 `CONTENT_ENGINE_TYPE` 可控启用 `llm_openai_compatible`；默认仍然是 `rule_based`；LLM 配置不完整或请求失败时自动 fallback 到 `rule_based`；`ContentGenerateResult` 增加 requested / actual / fallback 元信息；结果页可轻量显示内容引擎来源；不重复扣额度，不重复写生成记录，不影响图片生成，不暴露 API Key；Render 不需要配置 `APP_VERSION`，版本号跟随代码默认值。
@@ -361,6 +376,7 @@ py -m pytest -q --basetemp .tmp/pytest
 - v0.4-3：新增或增强商品细分类目识别；食品饮品细分为烘焙糕点、饮品冲泡、零食小吃、代餐轻食；美妆护肤细分为护肤、彩妆、护手霜/身体护理、随身补涂；家居日用细分为杯壶水杯、收纳整理、清洁用品、桌面/通勤好物；标题、正文、标签和图片卖点统一根据细分类目调整；继续使用规则引擎，不接大模型。
 - v0.4-2：增强内置 Pillow 图片模板质量，强化封面图、卖点图、清单总结图三类图片结构，增强五种风格差异，优化商品图占比、标题层级、标签和轻量装饰。
 - v0.4-1：增强 `poster_engine_adapter.py`，新增 `POSTER_ENGINE_TYPE` 配置，统一图片生成引擎入口，预留 `external_placeholder`。
+
 
 
 
