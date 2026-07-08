@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
@@ -30,6 +30,7 @@ def test_list_ops_tools_can_run_and_print_all_scripts(capsys):
     assert "batch_evaluate_content.py" in captured
     assert "engine_usage_report.py" in captured
     assert "bootstrap_config_center.py" in captured
+    assert "docs/config_center_integration.md" in captured
     assert "scripts/README.md" in captured
     assert "docs/llm_rollout_runbook.md" in captured
 
@@ -39,16 +40,19 @@ def test_scripts_readme_exists_and_documents_boundaries():
     assert readme_path.exists()
 
     content = readme_path.read_text(encoding="utf-8")
-    assert "smoke_check_llm.py" in content
-    assert "compare_content_engines.py" in content
-    assert "batch_evaluate_content.py" in content
-    assert "bootstrap_config_center.py" in content
-    assert "是否请求外网" in content
-    assert "是否修改数据库" in content
-    assert "LLM 启用前检查" in content
-    assert "LLM 启用后观察" in content
-    assert "配置中心初始化" in content
-    assert "CONTENT_ENGINE_TYPE=rule_based" in content
+    for expected in [
+        "smoke_check_llm.py",
+        "compare_content_engines.py",
+        "batch_evaluate_content.py",
+        "bootstrap_config_center.py",
+        "是否请求外网",
+        "是否修改数据库",
+        "LLM 启用前检查",
+        "LLM 启用后观察",
+        "配置中心初始化",
+        "CONTENT_ENGINE_TYPE=rule_based",
+    ]:
+        assert expected in content
 
 
 def test_project_readme_includes_ops_tool_entry():
@@ -56,6 +60,7 @@ def test_project_readme_includes_ops_tool_entry():
     content = readme_path.read_text(encoding="utf-8")
 
     assert "python scripts/list_ops_tools.py" in content
-    assert "python scripts/bootstrap_config_center.py" in content
+    assert "python scripts/bootstrap_config_center.py --dry-run" in content
     assert "scripts/README.md" in content
     assert "docs/llm_rollout_runbook.md" in content
+    assert "docs/config_center_integration.md" in content

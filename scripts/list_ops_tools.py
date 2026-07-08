@@ -30,11 +30,14 @@ engine_usage_report.py
 Config center:
 
 bootstrap_config_center.py
+dry run: python scripts/bootstrap_config_center.py --dry-run
+bootstrap: python scripts/bootstrap_config_center.py --yes
 
 Docs:
 
 scripts/README.md
 docs/llm_rollout_runbook.md
+docs/config_center_integration.md
 """
     )
     return 0

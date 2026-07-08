@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import argparse
 import json
 import os
-import sys
 from pathlib import Path
 from urllib import error, request
 
@@ -12,6 +12,13 @@ DEFAULT_BASE_URL = "http://39.106.61.160:28081"
 DEFAULT_PROJECT_CODE = "zhongcaoji"
 DEFAULT_RUNTIME = "python"
 DEFAULT_LOCAL_WORKSPACE_ROOT = str(ROOT_DIR)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Bootstrap internal config-center project.")
+    parser.add_argument("--dry-run", action="store_true", help="Print request summary without sending request.")
+    parser.add_argument("--yes", action="store_true", help="Confirm and send bootstrap request.")
+    return parser
 
 
 def _get_env(name: str, default: str = "") -> str:
@@ -54,8 +61,30 @@ def _post_bootstrap(base_url: str, payload: dict[str, str]) -> tuple[int, str]:
         return int(response.getcode()), response.read().decode("utf-8", errors="replace")
 
 
-def main() -> int:
+def _print_summary(config: dict[str, str], *, status_code: int | None = None) -> None:
+    print(f"projectCode: {config['project_code']}")
+    print(f"runtime: {config['runtime']}")
+    print(f"localWorkspaceRoot: {config['local_workspace_root']}")
+    print(f"inviteCode: {'configured' if config['invite_code'] else 'missing'}")
+    if status_code is not None:
+        print(f"status_code: {status_code}")
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
     config = _build_config()
+
+    if args.dry_run:
+        print("Config center bootstrap dry run")
+        _print_summary(config)
+        print("No request was sent.")
+        return 0
+
+    if not args.yes:
+        print(f"This will bootstrap config-center project: {config['project_code']}")
+        print("Run again with --yes to confirm.")
+        return 0
+
     if not config["invite_code"]:
         print("CONFIG_CENTER_INVITE_CODE is required")
         return 1
@@ -73,10 +102,7 @@ def main() -> int:
     except Exception:
         success = False
 
-    print(f"projectCode: {config['project_code']}")
-    print(f"runtime: {config['runtime']}")
-    print(f"localWorkspaceRoot: {config['local_workspace_root']}")
-    print(f"status_code: {status_code}")
+    _print_summary(config, status_code=status_code)
     if success:
         print("Config center bootstrap succeeded")
         return 0

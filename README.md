@@ -4,7 +4,7 @@
 上传商品图片、商品名称、商品类目和一句描述，自动生成小红书风格图片素材包与发布文案。
 
 ## 当前版本
-种草机 v0.6-5 运营脚本整理版
+种草机 v0.6-6 配置中心接入预留版
 
 ## 在线试用
 https://zhongcaoji.onrender.com/
@@ -20,15 +20,17 @@ https://zhongcaoji.onrender.com/
 - 结果页支持下载、复制、编辑标题/正文/标签/评论引导
 - 当前内容生成已支持规则引擎与 OpenAI-compatible 风格 LLM 最小接入
 
-## v0.6-5 本轮增强
-- 新增 `scripts/README.md`
-- 新增 `scripts/list_ops_tools.py`
-- 统一整理运营脚本用途、风险边界和常用命令
-- 明确哪些脚本会请求 LLM 外网接口
-- 明确哪些脚本会修改数据库
-- 补充用户套餐操作、LLM 启用前检查、LLM 启用后观察的操作流程
+## v0.6-6 本轮增强
+- 增强 `scripts/bootstrap_config_center.py`
+- `bootstrap` 默认增加确认保护
+- 支持 `--dry-run`
+- 支持 `--yes` 后确认执行
+- 新增 `docs/config_center_integration.md`
+- 记录 `zhongcaoji` config-center bootstrap 状态
+- 预留 `config_center_client` 服务层
+- 不实现未知配置读取接口
 - 不改正式生成流程
-- 默认线上仍建议保持 `CONTENT_ENGINE_TYPE=rule_based`
+- 不改 LLM 当前环境变量逻辑
 
 ## 当前额度规则
 - `trial` 默认 10 次 / 30 天
@@ -299,8 +301,20 @@ docs/llm_rollout_runbook.md
 
 配置中心初始化：
 ```bash
-python scripts/bootstrap_config_center.py
+python scripts/bootstrap_config_center.py --dry-run
+python scripts/bootstrap_config_center.py --yes
 ```
+
+配置中心接入说明：
+```text
+docs/config_center_integration.md
+```
+
+## 配置中心接入状态
+- 当前已完成 `projectCode=zhongcaoji` 的 bootstrap
+- 当前线上仍使用 Render 环境变量和本地环境变量作为配置来源
+- 后续如果要从配置中心读取 LLM 配置，还需要补充配置读取接口文档
+- 在读取接口明确前，`CONTENT_ENGINE_TYPE`、`LLM_BASE_URL`、`LLM_MODEL`、`LLM_API_KEY` 继续沿用环境变量逻辑
 
 ## 中心化运营脚本
 查看用户：
@@ -358,7 +372,7 @@ py -m pytest -q --basetemp .tmp/pytest
 ```
 
 ## /health 版本说明
-`/health` 返回的 `version` 默认读取 `app/config.py` 里的代码版本，当前默认值为 `v0.6-5`。
+`/health` 返回的 `version` 默认读取 `app/config.py` 里的代码版本，当前默认值为 `v0.6-6`。
 `APP_VERSION` 只作为可选覆盖项。
 
 部署建议：
@@ -369,7 +383,9 @@ py -m pytest -q --basetemp .tmp/pytest
 如果 Render 线上 `/health` 仍显示旧版本，优先检查 Render Environment 里是否配置过 `APP_VERSION`；如果配过，建议删除该环境变量后重新部署，让版本号回到代码默认值。
 
 ## 版本记录
-- v0.6-5：新增 `scripts/README.md`；新增 `scripts/list_ops_tools.py`；统一整理运营脚本用途、风险边界和常用命令；明确哪些脚本会请求 LLM 外网接口，哪些脚本会修改数据库；补充用户套餐操作、LLM 启用前检查、LLM 启用后观察流程；不改正式生成流程；默认线上仍建议保持 `CONTENT_ENGINE_TYPE=rule_based`。`r`n- v0.6-4：新增 `scripts/engine_usage_report.py`；支持按最近 N 条记录、按邮箱过滤查看内容引擎使用情况；支持统计 `rule_based / llm_openai_compatible / fallback / unknown` 和 `fallback_reason` 分布；支持 `text / json` 输出；脚本只读数据库，不扣额度、不写记录、不请求外网；默认线上仍建议保持 `CONTENT_ENGINE_TYPE=rule_based`。
+- v0.6-6：增强 `scripts/bootstrap_config_center.py`；`bootstrap` 默认增加确认保护；支持 `--dry-run` 和 `--yes`；新增 `docs/config_center_integration.md`；记录 `zhongcaoji` config-center bootstrap 状态；预留 `config_center_client` 服务层；当前不实现未知配置读取接口；不改正式生成流程；不改 LLM 当前环境变量逻辑；不暴露 inviteCode 或 API Key。
+- v0.6-5：新增 `scripts/README.md`；新增 `scripts/list_ops_tools.py`；统一整理运营脚本用途、风险边界和常用命令；明确哪些脚本会请求 LLM 外网接口，哪些脚本会修改数据库；补充用户套餐操作、LLM 启用前检查、LLM 启用后观察流程；不改正式生成流程；默认线上仍建议保持 `CONTENT_ENGINE_TYPE=rule_based`。
+- v0.6-4：新增 `scripts/engine_usage_report.py`；支持按最近 N 条记录、按邮箱过滤查看内容引擎使用情况；支持统计 `rule_based / llm_openai_compatible / fallback / unknown` 和 `fallback_reason` 分布；支持 `text / json` 输出；脚本只读数据库，不扣额度、不写记录、不请求外网；默认线上仍建议保持 `CONTENT_ENGINE_TYPE=rule_based`。
 - v0.6-3：`generation_records` 新增内容引擎使用记录字段；旧数据库自动补齐缺失列；成功生成后记录 requested / actual / fallback 元信息；`/me/records` 新增最近 30 条内容引擎摘要与每条记录的来源显示；旧记录空字段安全兼容；仍然只扣 1 次额度、只写 1 条生成记录；Render 仍建议不要配置 `APP_VERSION`。
 - v0.6-2：新增 `docs/llm_rollout_runbook.md`；新增 `scripts/preflight_llm_rollout.py`；明确 LLM 灰度启用前检查流程、Render 环境变量启用方式、启用后观察项和快速回退到 `rule_based` 的方式；默认仍为 `rule_based`；不请求外网，不扣额度，不写记录，不生成图片，不修改数据库；不提交真实 API Key。
 - v0.6-1：正式生成流程支持通过 `CONTENT_ENGINE_TYPE` 可控启用 `llm_openai_compatible`；默认仍然是 `rule_based`；LLM 配置不完整或请求失败时自动 fallback 到 `rule_based`；`ContentGenerateResult` 增加 requested / actual / fallback 元信息；结果页可轻量显示内容引擎来源；不重复扣额度，不重复写生成记录，不影响图片生成，不暴露 API Key；Render 不需要配置 `APP_VERSION`，版本号跟随代码默认值。

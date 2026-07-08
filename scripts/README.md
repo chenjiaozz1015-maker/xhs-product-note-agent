@@ -7,7 +7,7 @@
 - 不要把真实 API Key 或真实 inviteCode 写进代码、README 或 `.env.example`
 - 线上默认建议保持 `CONTENT_ENGINE_TYPE=rule_based`
 - 只有 `smoke_check_llm.py`、`compare_content_engines.py`、`batch_evaluate_content.py` 会在 LLM 配置完整时请求模型接口
-- `bootstrap_config_center.py` 会请求内部 config-center 接口
+- `bootstrap_config_center.py` 只有在传 `--yes` 且 `CONFIG_CENTER_INVITE_CODE` 存在时才会请求内部 config-center 接口
 - 其他脚本默认只读或只做本地数据库操作
 
 ## 脚本清单
@@ -21,23 +21,25 @@
 | `compare_content_engines.py` | 单个商品对比 `rule_based` 和 LLM 文案 | 是，配置完整时会请求一次 | 否 | `python scripts/compare_content_engines.py` | 看单个样例的规则文案和 LLM 文案差异 |
 | `batch_evaluate_content.py` | 多个样例批量评测 `rule_based` 和 LLM 文案 | 是，配置完整时会请求模型接口 | 否 | `python scripts/batch_evaluate_content.py --format markdown --output content_eval.md` | 做小样本批量质量对比 |
 | `engine_usage_report.py` | 查看 `generation_records` 的内容引擎使用统计 | 否 | 否，只读 | `python scripts/engine_usage_report.py --limit 50` | LLM 启用后观察实际命中和 fallback |
-| `bootstrap_config_center.py` | 调用内部 config-center bootstrap 接口初始化项目配置 | 是，会请求内部接口 | 否 | `python scripts/bootstrap_config_center.py` | 首次初始化配置中心项目 |
+| `bootstrap_config_center.py` | 调用内部 config-center bootstrap 接口初始化项目配置 | 只有 `--yes` 且 inviteCode 存在时会请求 | 否 | `python scripts/bootstrap_config_center.py --dry-run` | 首次初始化配置中心项目 |
 | `list_ops_tools.py` | 打印运营脚本入口和常用命令索引 | 否 | 否 | `python scripts/list_ops_tools.py` | 快速查“该用哪个脚本” |
 
 ## 配置中心初始化
 设置环境变量后运行：
 
 ```bash
-python scripts/bootstrap_config_center.py
+python scripts/bootstrap_config_center.py --dry-run
+python scripts/bootstrap_config_center.py --yes
 ```
 
 说明：
-- 该脚本会请求内部 config-center 接口
+- 只有传 `--yes` 且 `CONFIG_CENTER_INVITE_CODE` 存在时，才会请求内部 config-center 接口
 - 不会修改数据库
 - 不会扣额度
 - 不会写 `generation_records`
 - 不会生成图片
 - 不要提交真实 inviteCode
+- `bootstrap` 是初始化动作，不建议重复执行
 
 ## 常见操作流程
 

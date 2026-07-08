@@ -34,6 +34,39 @@ class _FakeResponse:
         return None
 
 
+def test_default_run_requires_confirmation_and_does_not_request(monkeypatch, capsys):
+    module = _load_module()
+    called = {"value": False}
+
+    monkeypatch.setenv("CONFIG_CENTER_INVITE_CODE", "secret-invite-code")
+    monkeypatch.setattr(module, "_post_bootstrap", lambda *args, **kwargs: called.update(value=True))
+
+    exit_code = module.main([])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert "This will bootstrap config-center project: zhongcaoji" in captured.out
+    assert "Run again with --yes to confirm." in captured.out
+    assert called["value"] is False
+
+
+def test_dry_run_prints_summary_without_request(monkeypatch, capsys):
+    module = _load_module()
+    called = {"value": False}
+
+    monkeypatch.delenv("CONFIG_CENTER_INVITE_CODE", raising=False)
+    monkeypatch.setattr(module, "_post_bootstrap", lambda *args, **kwargs: called.update(value=True))
+
+    exit_code = module.main(["--dry-run"])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert "Config center bootstrap dry run" in captured.out
+    assert "inviteCode: missing" in captured.out
+    assert "No request was sent." in captured.out
+    assert called["value"] is False
+
+
 def test_invite_code_required_without_request(monkeypatch, capsys):
     module = _load_module()
     called = {"value": False}
@@ -41,7 +74,7 @@ def test_invite_code_required_without_request(monkeypatch, capsys):
     monkeypatch.delenv("CONFIG_CENTER_INVITE_CODE", raising=False)
     monkeypatch.setattr(module, "_post_bootstrap", lambda *args, **kwargs: called.update(value=True))
 
-    exit_code = module.main()
+    exit_code = module.main(["--yes"])
     captured = capsys.readouterr()
 
     assert exit_code == 1
@@ -66,7 +99,7 @@ def test_builds_correct_default_payload_and_succeeds(monkeypatch, capsys):
 
     monkeypatch.setattr(module, "_post_bootstrap", fake_post)
 
-    exit_code = module.main()
+    exit_code = module.main(["--yes"])
     captured = capsys.readouterr()
 
     assert exit_code == 0
@@ -79,6 +112,7 @@ def test_builds_correct_default_payload_and_succeeds(monkeypatch, capsys):
     }
     assert "Config center bootstrap succeeded" in captured.out
     assert "projectCode: zhongcaoji" in captured.out
+    assert "inviteCode: configured" in captured.out
     assert "secret-invite-code" not in captured.out
 
 
@@ -88,7 +122,7 @@ def test_failure_output_does_not_print_invite_code(monkeypatch, capsys):
     monkeypatch.setenv("CONFIG_CENTER_INVITE_CODE", "secret-invite-code")
     monkeypatch.setattr(module, "_post_bootstrap", lambda *args, **kwargs: (_ for _ in ()).throw(error.URLError("boom")))
 
-    exit_code = module.main()
+    exit_code = module.main(["--yes"])
     captured = capsys.readouterr()
 
     assert exit_code == 1
