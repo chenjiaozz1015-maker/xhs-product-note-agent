@@ -17,7 +17,7 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 APP_NAME = os.getenv("APP_NAME", "种草机")
 APP_TITLE = os.getenv("APP_TITLE", APP_NAME)
-CODE_APP_VERSION = "v0.6-3"
+CODE_APP_VERSION = "v0.6-4"
 APP_VERSION = os.getenv("APP_VERSION", "").strip() or CODE_APP_VERSION
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))
