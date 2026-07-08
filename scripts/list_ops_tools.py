@@ -27,6 +27,10 @@ Monitoring:
 
 engine_usage_report.py
 
+Config center:
+
+bootstrap_config_center.py
+
 Docs:
 
 scripts/README.md

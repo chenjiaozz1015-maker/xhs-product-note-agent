@@ -296,6 +296,12 @@ LLM 灰度启用手册：
 ```text
 docs/llm_rollout_runbook.md
 ```
+
+配置中心初始化：
+```bash
+python scripts/bootstrap_config_center.py
+```
+
 ## 中心化运营脚本
 查看用户：
 ```bash
