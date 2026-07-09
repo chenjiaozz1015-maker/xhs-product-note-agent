@@ -5,6 +5,7 @@
 - 不要提交 `.env`
 - 不要提交 `data/zhongcaoji.db`
 - 不要把真实 API Key、真实 inviteCode 或真实 runtimeConfigToken 写进代码、README 或 `.env.example`
+- 不要把真实用户密码写进代码、README 或测试文件
 - 线上默认建议保持 `CONTENT_ENGINE_TYPE=rule_based`
 - 只有 `smoke_check_llm.py`、`compare_content_engines.py`、`batch_evaluate_content.py` 会在 LLM 配置完整时请求模型接口
 - `bootstrap_config_center.py` 只有在传 `--yes` 且 `CONFIG_CENTER_INVITE_CODE` 存在时才会请求内部 config-center 接口
@@ -24,6 +25,7 @@
 | `engine_usage_report.py` | 查看 `generation_records` 的内容引擎使用统计 | 否 | 否，只读 | `python scripts/engine_usage_report.py --limit 50` | LLM 启用后观察实际命中和 fallback |
 | `bootstrap_config_center.py` | 调用内部 config-center bootstrap 接口初始化项目配置 | 只有 `--yes` 且 inviteCode 存在时会请求 | 否 | `python scripts/bootstrap_config_center.py --dry-run` | 首次初始化配置中心项目 |
 | `check_config_center_runtime.py` | 检查 runtime token 文件并请求一次 runtime-config | 是，会请求 config-center | 否 | `python scripts/check_config_center_runtime.py` | 手动验证配置中心运行时读取是否正常 |
+| `reset_user_password.py` | 运营侧重置用户登录密码 | 否 | 是，只修改指定用户密码哈希 | `python scripts/reset_user_password.py --email user@example.com --password "NewPassword123"` | 测试用户忘记密码时手动重置 |
 | `list_ops_tools.py` | 打印运营脚本入口和常用命令索引 | 否 | 否 | `python scripts/list_ops_tools.py` | 快速查“该用哪个脚本” |
 
 ## 配置中心初始化
@@ -62,6 +64,21 @@ python scripts/check_config_center_runtime.py
 - 它不会生成图片
 - 它不会修改 `CONTENT_ENGINE_TYPE`
 - 它只打印 `config keys`，不会打印完整 `runtimeConfigToken` 或完整敏感配置值
+
+## 运营重置用户密码
+常用命令：
+
+```bash
+python scripts/reset_user_password.py --email user@example.com --password "NewPassword123"
+```
+
+说明：
+- 这个脚本只修改指定用户的密码哈希
+- 它不会修改套餐
+- 它不会修改额度
+- 它不会修改 `generation_records`
+- 它不会显示明文密码
+- 仅限运营人员使用
 
 ## 常见操作流程
 

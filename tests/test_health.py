@@ -10,7 +10,7 @@ def test_health_returns_version_and_directory_status():
     assert payload["status"] == "ok"
     assert payload["app"] == "zhongcaoji"
     assert payload["version"] == APP_VERSION
-    assert payload["version"] == "v0.6-7"
+    assert payload["version"] == "v0.6-8"
     assert payload["content_engine_type"]
     assert payload["poster_engine_type"]
     assert payload["llm_provider"] == "openai_compatible"

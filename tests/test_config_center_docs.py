@@ -21,3 +21,5 @@ def test_gitignore_includes_runtime_token_patterns():
 
     assert ".config-center/*.runtime-token.json" in content
     assert ".config-center/*.token.json" in content
+    assert ".tmp/" in content
+    assert ".pytest_cache/" in content

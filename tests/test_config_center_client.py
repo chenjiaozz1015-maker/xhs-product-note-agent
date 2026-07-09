@@ -41,7 +41,10 @@ def test_get_config_center_settings_uses_runtime_defaults(monkeypatch, tmp_path)
     assert settings["project_code"] == "zhongcaoji"
     assert settings["env"] == "test"
     assert settings["timeout_seconds"] == 12.0
-    assert str(token_path) in str(settings["runtime_token_file"])
+    resolved_runtime_token_file = Path(settings["runtime_token_file"])
+    if not resolved_runtime_token_file.is_absolute():
+        resolved_runtime_token_file = (config_center_client.BASE_DIR / resolved_runtime_token_file).resolve()
+    assert resolved_runtime_token_file == token_path.resolve()
 
 
 def test_load_runtime_config_token_missing_file(monkeypatch, tmp_path):

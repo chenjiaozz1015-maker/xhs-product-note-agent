@@ -20,3 +20,6 @@ compare_result*.json
 .config-center/*.token.json
 .config-center/.runtime-token.json
 .config-center/.token.json
+.tmp/
+.tmp/**
+.pytest_cache/

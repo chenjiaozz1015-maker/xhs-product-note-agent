@@ -4,7 +4,7 @@
 上传商品图片、商品名称、商品类目和一句描述，自动生成小红书风格图片素材包与发布文案。
 
 ## 当前版本
-种草机 v0.6-7 配置中心读取版
+种草机 v0.6-8 运营重置密码版
 
 ## 在线试用
 https://zhongcaoji.onrender.com/
@@ -20,17 +20,16 @@ https://zhongcaoji.onrender.com/
 - 结果页支持下载、复制、编辑标题/正文/标签/评论引导
 - 当前内容生成已支持规则引擎与 OpenAI-compatible 风格 LLM 最小接入
 
-## v0.6-7 本轮增强
-- 接入 config-center 的 runtime-config 读取能力
-- 从 `.config-center/test.runtime-token.json` 读取 `runtimeConfigToken`
-- 使用 `X-Project-Config-Token` 调用 runtime-config 接口
-- 新增 `scripts/check_config_center_runtime.py`
-- `/health` 增加 config-center token 安全摘要
-- 不再使用 `inviteCode` 读取运行时配置
-- bootstrap 不需要重复执行
-- 不把 config-center 配置直接切进 LLM
-- 不改 `CONTENT_ENGINE_TYPE`
-- 不改正式生成流程
+## v0.6-8 本轮增强
+- 新增 `scripts/reset_user_password.py`
+- 支持运营侧按 email 重置用户密码
+- 使用现有密码哈希逻辑
+- 不保存明文密码
+- 不打印新密码
+- 不修改套餐、额度、生成记录
+- 不做前端忘记密码页面
+- 不接邮件/短信
+- 不影响正式生成流程
 
 ## 当前额度规则
 - `trial` 默认 10 次 / 30 天
@@ -359,6 +358,17 @@ python scripts/manage_user_plan.py list --limit 20
 - 修改 plan 后会复用服务层同步 `monthly_quota`
 - `used_quota` 保留，不清空历史使用
 
+## 运营重置用户密码
+如果测试用户忘记密码，运营人员可以在服务器或本地执行：
+
+```bash
+python scripts/reset_user_password.py --email user@example.com --password "NewPassword123"
+```
+
+说明：
+- 该脚本只修改用户密码哈希
+- 不修改套餐、额度或生成记录
+
 ## 本地启动
 ```bash
 python -m venv .venv
@@ -383,7 +393,7 @@ py -m pytest -q --basetemp .tmp/pytest
 ```
 
 ## /health 版本说明
-`/health` 返回的 `version` 默认读取 `app/config.py` 里的代码版本，当前默认值为 `v0.6-7`。
+`/health` 返回的 `version` 默认读取 `app/config.py` 里的代码版本，当前默认值为 `v0.6-8`。
 `APP_VERSION` 只作为可选覆盖项。
 
 部署建议：
@@ -394,6 +404,7 @@ py -m pytest -q --basetemp .tmp/pytest
 如果 Render 线上 `/health` 仍显示旧版本，优先检查 Render Environment 里是否配置过 `APP_VERSION`；如果配过，建议删除该环境变量后重新部署，让版本号回到代码默认值。
 
 ## 版本记录
+- v0.6-8：新增 `scripts/reset_user_password.py`；支持运营侧按 email 重置用户密码；使用现有密码哈希逻辑；不保存明文密码；不打印新密码；不修改套餐、额度、生成记录；不做前端忘记密码页面；不接邮件/短信；不影响正式生成流程。
 - v0.6-7：接入 config-center runtime-config 读取能力；从 `.config-center/test.runtime-token.json` 读取 `runtimeConfigToken`；使用 `X-Project-Config-Token` 调用 runtime-config 接口；新增 `scripts/check_config_center_runtime.py`；`/health` 增加 config-center token 安全摘要；不再使用 `inviteCode` 读取运行时配置；bootstrap 不需要重复执行；不把 config-center 配置直接切进 LLM；不改 `CONTENT_ENGINE_TYPE`；不改正式生成流程；不暴露 `runtimeConfigToken`。
 - v0.6-6：增强 `scripts/bootstrap_config_center.py`；`bootstrap` 默认增加确认保护；支持 `--dry-run` 和 `--yes`；新增 `docs/config_center_integration.md`；记录 `zhongcaoji` config-center bootstrap 状态；预留 `config_center_client` 服务层；当前不实现未知配置读取接口；不改正式生成流程；不改 LLM 当前环境变量逻辑；不暴露 inviteCode 或 API Key。
 - v0.6-5：新增 `scripts/README.md`；新增 `scripts/list_ops_tools.py`；统一整理运营脚本用途、风险边界和常用命令；明确哪些脚本会请求 LLM 外网接口，哪些脚本会修改数据库；补充用户套餐操作、LLM 启用前检查、LLM 启用后观察流程；不改正式生成流程；默认线上仍建议保持 `CONTENT_ENGINE_TYPE=rule_based`。

@@ -11,6 +11,7 @@ manage_user_plan.py
 show user: python scripts/manage_user_plan.py show --email user@example.com
 set plan: python scripts/manage_user_plan.py set-plan --email user@example.com --plan personal
 list users: python scripts/manage_user_plan.py list --limit 20
+reset password: python scripts/reset_user_password.py --email user@example.com --password "NewPassword123"
 
 LLM rollout:
 

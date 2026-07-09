@@ -23,6 +23,7 @@ def test_list_ops_tools_can_run_and_print_all_scripts(capsys):
     assert exit_code == 0
     assert "Zhongcaoji Ops Tools" in captured
     assert "manage_user_plan.py" in captured
+    assert "reset_user_password.py" in captured
     assert "check_llm_config.py" in captured
     assert "preflight_llm_rollout.py" in captured
     assert "smoke_check_llm.py" in captured
@@ -47,6 +48,7 @@ def test_scripts_readme_exists_and_documents_boundaries():
         "batch_evaluate_content.py",
         "bootstrap_config_center.py",
         "check_config_center_runtime.py",
+        "reset_user_password.py",
         "是否请求外网",
         "是否修改数据库",
         "LLM 启用前检查",
@@ -64,6 +66,7 @@ def test_project_readme_includes_ops_tool_entry():
     content = readme_path.read_text(encoding="utf-8")
 
     assert "python scripts/list_ops_tools.py" in content
+    assert 'python scripts/reset_user_password.py --email user@example.com --password "NewPassword123"' in content
     assert "python scripts/bootstrap_config_center.py --dry-run" in content
     assert "python scripts/check_config_center_runtime.py" in content
     assert "scripts/README.md" in content
