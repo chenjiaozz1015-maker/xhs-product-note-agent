@@ -10,7 +10,7 @@ def test_health_returns_version_and_directory_status():
     assert payload["status"] == "ok"
     assert payload["app"] == "zhongcaoji"
     assert payload["version"] == APP_VERSION
-    assert payload["version"] == "v0.7-1"
+    assert payload["version"] == "v0.7-2"
     assert payload["content_engine_type"]
     assert payload["poster_engine_type"]
     assert payload["llm_provider"] == "openai_compatible"
@@ -20,6 +20,9 @@ def test_health_returns_version_and_directory_status():
     assert "config_center_runtime_token_ready" in payload
     assert "app_settings_ready" in payload
     assert "app_settings_count" in payload
+    assert "content_engine_type_source" in payload
+    assert "llm_api_key_source" in payload
+    assert "llm_api_key_configured" in payload
     assert "runtimeConfigToken" not in payload
     assert payload["uploads_dir_exists"] is True
     assert payload["generated_dir_exists"] is True

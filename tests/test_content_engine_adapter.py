@@ -31,6 +31,14 @@ def _enable_llm(monkeypatch):
     monkeypatch.setattr(llm_content_service, "LLM_MODEL", "demo-model")
     monkeypatch.setattr(llm_content_service, "LLM_TIMEOUT_SECONDS_RAW", "15")
     monkeypatch.setattr(llm_content_service, "LLM_MAX_RETRIES_RAW", "0")
+    monkeypatch.setattr(
+        llm_content_service,
+        "get_runtime_config_values",
+        lambda keys, defaults=None, **_: {
+            key: {"value": (defaults or {}).get(key, ""), "source": "default"}
+            for key in keys
+        },
+    )
 
 
 def test_content_engine_type_defaults_to_rule_based(monkeypatch):

@@ -10,6 +10,7 @@ from app.services.llm_content_service import (
     generate_openai_compatible_note_data,
     get_llm_config_status,
 )
+from app.services.runtime_config_service import get_runtime_config_value
 
 
 @dataclass(frozen=True)
@@ -35,7 +36,12 @@ class ContentGenerateResult:
 
 
 def resolve_content_engine_type(engine_type: str | None = None) -> str:
-    resolved = str(engine_type or CONTENT_ENGINE_TYPE or "rule_based").strip() or "rule_based"
+    setting = (
+        {"value": engine_type, "source": "argument"}
+        if engine_type is not None
+        else get_runtime_config_value("CONTENT_ENGINE_TYPE", default=CONTENT_ENGINE_TYPE)
+    )
+    resolved = str(setting.get("value") or "rule_based").strip() or "rule_based"
     if resolved in SUPPORTED_CONTENT_ENGINE_TYPES:
         return resolved
     return "rule_based"
@@ -96,7 +102,12 @@ def generate_content(
     content_input: ContentGenerateInput,
     engine_type: str | None = None,
 ) -> ContentGenerateResult:
-    requested_engine_type = str(engine_type or CONTENT_ENGINE_TYPE or "rule_based").strip() or "rule_based"
+    requested_setting = (
+        {"value": engine_type}
+        if engine_type is not None
+        else get_runtime_config_value("CONTENT_ENGINE_TYPE", default=CONTENT_ENGINE_TYPE)
+    )
+    requested_engine_type = str(requested_setting.get("value") or "rule_based").strip() or "rule_based"
     resolved_engine_type = resolve_content_engine_type(engine_type)
     rule_based_result = generate_content_with_rule_based(
         content_input,

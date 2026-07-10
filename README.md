@@ -4,7 +4,7 @@
 上传商品图片、商品名称、商品类目和一句描述，自动生成小红书风格图片素材包与发布文案。
 
 ## 当前版本
-种草机 v0.7-1 内置配置管理版
+种草机 v0.7-2 LLM 配置兜底版
 
 ## 在线试用
 https://zhongcaoji.onrender.com/
@@ -406,7 +406,7 @@ py -m pytest -q --basetemp .tmp/pytest
 ```
 
 ## /health 版本说明
-`/health` 返回的 `version` 默认读取 `app/config.py` 里的代码版本，当前默认值为 `v0.7-1`。
+`/health` 返回的 `version` 默认读取 `app/config.py` 里的代码版本，当前默认值为 `v0.7-2`。
 `APP_VERSION` 只作为可选覆盖项。
 
 部署建议：
@@ -417,6 +417,7 @@ py -m pytest -q --basetemp .tmp/pytest
 如果 Render 线上 `/health` 仍显示旧版本，优先检查 Render Environment 里是否配置过 `APP_VERSION`；如果配过，建议删除该环境变量后重新部署，让版本号回到代码默认值。
 
 ## 版本记录
+- v0.7-2：LLM 配置支持环境变量 > `app_settings` > 代码默认值；支持 `CONTENT_ENGINE_TYPE` 从 `app_settings` 兜底读取；`/health` 和 LLM 检查脚本显示配置来源与安全状态；secret 不显示明文；线上默认仍建议 `CONTENT_ENGINE_TYPE=rule_based`。
 - v0.7-1：新增本地 `app_settings` 配置表、`settings_service.py` 和 `settings_set.py` / `settings_get.py` / `settings_list.py` 运营脚本；支持 secret 配置脱敏；`/health` 增加 `app_settings_ready` 与 `app_settings_count`；当前不改变正式配置来源、不启用 LLM、不依赖 config-center。
 - v0.6-8：新增 `scripts/reset_user_password.py`；支持运营侧按 email 重置用户密码；使用现有密码哈希逻辑；不保存明文密码；不打印新密码；不修改套餐、额度、生成记录；不做前端忘记密码页面；不接邮件/短信；不影响正式生成流程。
 - v0.6-7：接入 config-center runtime-config 读取能力；从 `.config-center/test.runtime-token.json` 读取 `runtimeConfigToken`；使用 `X-Project-Config-Token` 调用 runtime-config 接口；新增 `scripts/check_config_center_runtime.py`；`/health` 增加 config-center token 安全摘要；不再使用 `inviteCode` 读取运行时配置；bootstrap 不需要重复执行；不把 config-center 配置直接切进 LLM；不改 `CONTENT_ENGINE_TYPE`；不改正式生成流程；不暴露 `runtimeConfigToken`。

@@ -170,3 +170,16 @@ python scripts/settings_list.py
 - `settings_list.py`：列出全部配置，secret 默认脱敏。
 - 自动识别包含 `API_KEY`、`TOKEN`、`SECRET`、`PASSWORD`、`PRIVATE_KEY` 的 key 为 secret；可用 `--plain` 明确覆盖。
 - 不要把真实 API Key 写入 README、`.env.example` 或 Git。当前 `app_settings` 不直接控制正式 LLM 流程。
+
+## LLM 配置来源
+
+LLM 相关配置读取顺序为：环境变量 > `app_settings` > 代码默认值。可通过以下命令写入本地配置：
+
+```bash
+python scripts/settings_set.py --key LLM_MODEL --value "qwen-plus"
+python scripts/settings_set.py --key LLM_BASE_URL --value "https://your-compatible-api.example/v1"
+python scripts/settings_set.py --key LLM_API_KEY --value "your-api-key" --secret
+python scripts/check_llm_config.py
+```
+
+检查脚本和 preflight 会显示每个配置的来源以及 `configured / missing` 状态，不会显示完整 secret。正式线上仍建议在 Render 保持 `CONTENT_ENGINE_TYPE=rule_based`，本轮不会自动启用 LLM。

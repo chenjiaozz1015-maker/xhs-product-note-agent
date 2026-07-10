@@ -26,6 +26,7 @@ from app.config import (
     LLM_TIMEOUT_SECONDS_RAW,
 )
 from app.services.category_profile import detect_product_profile, get_profile_copy
+from app.services.runtime_config_service import get_runtime_config_values
 
 
 SUPPORTED_CONTENT_ENGINE_TYPES = {
@@ -69,6 +70,12 @@ class LLMConfigStatus:
     llm_api_key_preview: str = "missing"
     timeout_seconds: float = 15.0
     max_retries: int = 1
+    llm_provider_source: str = "default"
+    llm_base_url_source: str = "missing"
+    llm_model_source: str = "missing"
+    llm_api_key_source: str = "missing"
+    llm_timeout_seconds_source: str = "default"
+    llm_max_retries_source: str = "default"
 
 
 @dataclass(frozen=True)
@@ -142,13 +149,40 @@ def get_llm_config_status(
     llm_timeout_seconds_raw: str | None = None,
     llm_max_retries_raw: str | None = None,
 ) -> LLMConfigStatus:
-    requested_engine_type = str(content_engine_type or CONTENT_ENGINE_TYPE or "rule_based").strip() or "rule_based"
-    provider = str(llm_provider or LLM_PROVIDER or "openai_compatible").strip() or "openai_compatible"
-    api_key = str(LLM_API_KEY if llm_api_key is None else llm_api_key).strip()
-    base_url = str(LLM_BASE_URL if llm_base_url is None else llm_base_url).strip()
-    model = str(LLM_MODEL if llm_model is None else llm_model).strip()
-    timeout_raw = str(LLM_TIMEOUT_SECONDS_RAW if llm_timeout_seconds_raw is None else llm_timeout_seconds_raw).strip() or "15"
-    retries_raw = str(LLM_MAX_RETRIES_RAW if llm_max_retries_raw is None else llm_max_retries_raw).strip() or "1"
+    content_engine_setting = (
+        {"value": content_engine_type}
+        if content_engine_type is not None
+        else get_runtime_config_values(
+            ["CONTENT_ENGINE_TYPE"], {"CONTENT_ENGINE_TYPE": CONTENT_ENGINE_TYPE}
+        )["CONTENT_ENGINE_TYPE"]
+    )
+    requested_engine_type = str(content_engine_setting.get("value") or "rule_based").strip() or "rule_based"
+    resolved = get_runtime_config_values(
+        ["LLM_PROVIDER", "LLM_API_KEY", "LLM_BASE_URL", "LLM_MODEL", "LLM_TIMEOUT_SECONDS", "LLM_MAX_RETRIES"],
+        defaults={
+            "LLM_PROVIDER": LLM_PROVIDER,
+            "LLM_API_KEY": LLM_API_KEY,
+            "LLM_BASE_URL": LLM_BASE_URL,
+            "LLM_MODEL": LLM_MODEL,
+            "LLM_TIMEOUT_SECONDS": LLM_TIMEOUT_SECONDS_RAW,
+            "LLM_MAX_RETRIES": LLM_MAX_RETRIES_RAW,
+        },
+        reveal_secret=True,
+    )
+    provider = str(llm_provider if llm_provider is not None else resolved["LLM_PROVIDER"]["value"] or "openai_compatible").strip()
+    api_key = str(llm_api_key if llm_api_key is not None else resolved["LLM_API_KEY"]["value"] or "").strip()
+    base_url = str(llm_base_url if llm_base_url is not None else resolved["LLM_BASE_URL"]["value"] or "").strip()
+    model = str(llm_model if llm_model is not None else resolved["LLM_MODEL"]["value"] or "").strip()
+    timeout_raw = str(llm_timeout_seconds_raw if llm_timeout_seconds_raw is not None else resolved["LLM_TIMEOUT_SECONDS"]["value"] or "15").strip() or "15"
+    retries_raw = str(llm_max_retries_raw if llm_max_retries_raw is not None else resolved["LLM_MAX_RETRIES"]["value"] or "1").strip() or "1"
+    sources = {key: ("argument" if value is not None else resolved[key]["source"]) for key, value in {
+        "LLM_PROVIDER": llm_provider,
+        "LLM_BASE_URL": llm_base_url,
+        "LLM_MODEL": llm_model,
+        "LLM_API_KEY": llm_api_key,
+        "LLM_TIMEOUT_SECONDS": llm_timeout_seconds_raw,
+        "LLM_MAX_RETRIES": llm_max_retries_raw,
+    }.items()}
 
     if requested_engine_type not in SUPPORTED_CONTENT_ENGINE_TYPES:
         return LLMConfigStatus(
@@ -163,6 +197,9 @@ def get_llm_config_status(
             llm_api_key_preview=_mask_api_key(api_key),
             timeout_seconds=LLM_TIMEOUT_SECONDS,
             max_retries=LLM_MAX_RETRIES,
+            llm_provider_source=sources["LLM_PROVIDER"], llm_base_url_source=sources["LLM_BASE_URL"],
+            llm_model_source=sources["LLM_MODEL"], llm_api_key_source=sources["LLM_API_KEY"],
+            llm_timeout_seconds_source=sources["LLM_TIMEOUT_SECONDS"], llm_max_retries_source=sources["LLM_MAX_RETRIES"],
         )
 
     if requested_engine_type != "llm_openai_compatible":
@@ -178,6 +215,9 @@ def get_llm_config_status(
             llm_api_key_preview=_mask_api_key(api_key),
             timeout_seconds=LLM_TIMEOUT_SECONDS,
             max_retries=LLM_MAX_RETRIES,
+            llm_provider_source=sources["LLM_PROVIDER"], llm_base_url_source=sources["LLM_BASE_URL"],
+            llm_model_source=sources["LLM_MODEL"], llm_api_key_source=sources["LLM_API_KEY"],
+            llm_timeout_seconds_source=sources["LLM_TIMEOUT_SECONDS"], llm_max_retries_source=sources["LLM_MAX_RETRIES"],
         )
 
     timeout_seconds, timeout_valid = _safe_float(timeout_raw, 15.0)
@@ -217,6 +257,9 @@ def get_llm_config_status(
             llm_api_key_preview=_mask_api_key(api_key),
             timeout_seconds=timeout_seconds,
             max_retries=max(0, max_retries),
+            llm_provider_source=sources["LLM_PROVIDER"], llm_base_url_source=sources["LLM_BASE_URL"],
+            llm_model_source=sources["LLM_MODEL"], llm_api_key_source=sources["LLM_API_KEY"],
+            llm_timeout_seconds_source=sources["LLM_TIMEOUT_SECONDS"], llm_max_retries_source=sources["LLM_MAX_RETRIES"],
         )
 
     return LLMConfigStatus(
@@ -231,6 +274,9 @@ def get_llm_config_status(
         llm_api_key_preview=_mask_api_key(api_key),
         timeout_seconds=timeout_seconds,
         max_retries=max_retries,
+        llm_provider_source=sources["LLM_PROVIDER"], llm_base_url_source=sources["LLM_BASE_URL"],
+        llm_model_source=sources["LLM_MODEL"], llm_api_key_source=sources["LLM_API_KEY"],
+        llm_timeout_seconds_source=sources["LLM_TIMEOUT_SECONDS"], llm_max_retries_source=sources["LLM_MAX_RETRIES"],
     )
 
 
@@ -541,19 +587,27 @@ def generate_openai_compatible_note_data(
     if not config_status.llm_config_ready:
         return LLMContentResult(success=False, error_message=config_status.status_code)
 
+    resolved = get_runtime_config_values(
+        ["LLM_MODEL", "LLM_API_KEY", "LLM_BASE_URL"],
+        defaults={"LLM_MODEL": LLM_MODEL, "LLM_API_KEY": LLM_API_KEY, "LLM_BASE_URL": LLM_BASE_URL},
+        reveal_secret=True,
+    )
+    model = str(resolved["LLM_MODEL"]["value"] or "")
+    api_key = str(resolved["LLM_API_KEY"]["value"] or "")
+    base_url = str(resolved["LLM_BASE_URL"]["value"] or "")
     request_payload = {
-        "model": LLM_MODEL,
+        "model": model,
         "messages": _build_messages(content_input),
         "temperature": 0.7,
         "response_format": {"type": "json_object"},
     }
     headers = {
-        "Authorization": f"Bearer {LLM_API_KEY}",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
 
     last_error = "llm_request_failed"
-    endpoint = _resolve_base_url(LLM_BASE_URL)
+    endpoint = _resolve_base_url(base_url)
     for _ in range(config_status.max_retries + 1):
         try:
             response_payload = _post_chat_completion(

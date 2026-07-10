@@ -3,6 +3,8 @@
 import importlib.util
 from pathlib import Path
 
+from app.services import runtime_config_service
+
 from app.services import llm_content_service
 
 
@@ -36,6 +38,7 @@ def test_check_llm_config_masks_api_key(monkeypatch, capsys):
 
 
 def test_check_llm_config_reports_missing_fields(monkeypatch, capsys):
+    monkeypatch.setattr(runtime_config_service, "get_setting_record", lambda *args, **kwargs: None)
     monkeypatch.setattr(llm_content_service, "CONTENT_ENGINE_TYPE", "llm_openai_compatible")
     monkeypatch.setattr(llm_content_service, "LLM_PROVIDER", "openai_compatible")
     monkeypatch.setattr(llm_content_service, "LLM_API_KEY", "")

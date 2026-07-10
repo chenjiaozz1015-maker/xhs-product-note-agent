@@ -9,6 +9,7 @@ if str(ROOT_DIR) not in sys.path:
 
 from app.config import CONTENT_ENGINE_TYPE, POSTER_ENGINE_TYPE
 from app.services.llm_content_service import get_llm_config_status
+from app.services.runtime_config_service import get_runtime_config_value
 
 
 def _status_label(status) -> str:
@@ -35,15 +36,22 @@ def _next_steps(status) -> list[str]:
 
 def main() -> int:
     status = get_llm_config_status("llm_openai_compatible")
+    content_engine_setting = get_runtime_config_value(
+        "CONTENT_ENGINE_TYPE", default=CONTENT_ENGINE_TYPE
+    )
 
     print("LLM Rollout Preflight\n")
-    print(f"Current content engine: {CONTENT_ENGINE_TYPE}")
+    print(f"Current content engine: {content_engine_setting['value']} via {content_engine_setting['source']}")
     print(f"Poster engine: {POSTER_ENGINE_TYPE}")
     print(f"LLM config ready: {str(status.llm_config_ready).lower()}")
     print(f"Provider: {status.llm_provider}")
+    print(f"Provider source: {status.llm_provider_source}")
     print(f"API key: {status.llm_api_key_status}")
+    print(f"API key source: {status.llm_api_key_source}")
     print(f"Base URL: {status.llm_base_url_status}")
+    print(f"Base URL source: {status.llm_base_url_source}")
     print(f"Model: {status.llm_model_status}")
+    print(f"Model source: {status.llm_model_source}")
     print(f"Timeout seconds: {status.timeout_seconds:g}")
     print(f"Max retries: {status.max_retries}")
     print(f"\nStatus: {_status_label(status)}")

@@ -11,6 +11,7 @@ if str(ROOT_DIR) not in sys.path:
 from app.services import llm_content_service
 from app.services.content_engine_adapter import ContentGenerateInput
 from app.services.content_generator import generate_note_payload
+from app.services.runtime_config_service import get_runtime_config_value
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -47,11 +48,16 @@ def main(argv: list[str] | None = None) -> int:
     print("LLM Smoke Check\n")
 
     status = llm_content_service.get_llm_config_status("llm_openai_compatible")
-    print(f"Content engine: llm_openai_compatible")
+    content_engine_setting = get_runtime_config_value("CONTENT_ENGINE_TYPE", default="rule_based")
+    print(f"Content engine: llm_openai_compatible via {content_engine_setting['source']}")
     print(f"Provider: {status.llm_provider}")
+    print(f"Provider source: {status.llm_provider_source}")
     print(f"Base URL: {status.llm_base_url_status}")
+    print(f"Base URL source: {status.llm_base_url_source}")
     print(f"Model: {status.llm_model_status}")
+    print(f"Model source: {status.llm_model_source}")
     print(f"API Key: {status.llm_api_key_status}, {status.llm_api_key_preview}")
+    print(f"API Key source: {status.llm_api_key_source}")
 
     if not status.llm_config_ready:
         print("\nStatus: SKIPPED")
