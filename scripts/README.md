@@ -151,3 +151,22 @@ python scripts/batch_evaluate_content.py --format json --output content_eval.jso
 - `content_eval.json`
 
 这类评测产物不要提交到 Git。
+
+## 内置运行时配置管理
+
+这些脚本只管理项目本地 SQLite 的 `app_settings` 表，不请求外网，也暂不改变正式生成配置来源：
+
+```bash
+python scripts/settings_set.py --key LLM_MODEL --value "qwen-plus"
+python scripts/settings_set.py --key LLM_API_KEY --value "your-api-key" --secret
+python scripts/settings_get.py --key LLM_MODEL
+python scripts/settings_get.py --key LLM_API_KEY
+python scripts/settings_get.py --key LLM_API_KEY --reveal
+python scripts/settings_list.py
+```
+
+- `settings_set.py`：写入或更新 `app_settings`，secret key 默认脱敏保存和输出。
+- `settings_get.py`：读取单个配置，secret 默认脱敏，只有 `--reveal` 才显示明文到终端。
+- `settings_list.py`：列出全部配置，secret 默认脱敏。
+- 自动识别包含 `API_KEY`、`TOKEN`、`SECRET`、`PASSWORD`、`PRIVATE_KEY` 的 key 为 secret；可用 `--plain` 明确覆盖。
+- 不要把真实 API Key 写入 README、`.env.example` 或 Git。当前 `app_settings` 不直接控制正式 LLM 流程。

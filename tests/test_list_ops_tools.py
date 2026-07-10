@@ -32,6 +32,9 @@ def test_list_ops_tools_can_run_and_print_all_scripts(capsys):
     assert "engine_usage_report.py" in captured
     assert "bootstrap_config_center.py" in captured
     assert "check_config_center_runtime.py" in captured
+    assert "settings_set.py" in captured
+    assert "settings_get.py" in captured
+    assert "settings_list.py" in captured
     assert "docs/config_center_integration.md" in captured
     assert "scripts/README.md" in captured
     assert "docs/llm_rollout_runbook.md" in captured
@@ -57,6 +60,9 @@ def test_scripts_readme_exists_and_documents_boundaries():
         "配置中心 runtime-config 读取",
         "--overwrite-token",
         "CONTENT_ENGINE_TYPE=rule_based",
+        "settings_set.py",
+        "settings_get.py",
+        "settings_list.py",
     ]:
         assert expected in content
 

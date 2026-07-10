@@ -24,6 +24,7 @@ from app.routes.pages import router as pages_router
 from app.services.config_center_client import get_config_center_settings, get_runtime_token_summary
 from app.services.image_composer import get_cjk_font_path
 from app.services.llm_content_service import get_llm_config_status
+from app.services.settings_service import app_settings_status
 
 app = FastAPI(title=APP_NAME)
 app.add_middleware(SignedCookieSessionMiddleware, secret_key=SESSION_SECRET)
@@ -38,6 +39,7 @@ async def health() -> dict:
     llm_status = get_llm_config_status(CONTENT_ENGINE_TYPE)
     config_center_settings = get_config_center_settings()
     runtime_token_summary = get_runtime_token_summary()
+    app_settings = app_settings_status()
     return {
         "status": "ok",
         "app": "zhongcaoji",
@@ -56,4 +58,6 @@ async def health() -> dict:
         "config_center_project_code": config_center_settings["project_code"],
         "config_center_env": config_center_settings["env"],
         "config_center_runtime_token_ready": runtime_token_summary["runtime_token_ready"],
+        "app_settings_ready": bool(app_settings["ready"]),
+        "app_settings_count": int(app_settings["count"]),
     }

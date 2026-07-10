@@ -41,6 +41,15 @@ Docs:
 scripts/README.md
 docs/llm_rollout_runbook.md
 docs/config_center_integration.md
+
+Runtime settings:
+
+settings_set.py
+set setting: python scripts/settings_set.py --key LLM_MODEL --value "qwen-plus"
+settings_get.py
+get setting: python scripts/settings_get.py --key LLM_MODEL
+settings_list.py
+list settings: python scripts/settings_list.py
 """
     )
     return 0

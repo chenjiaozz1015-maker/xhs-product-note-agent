@@ -43,6 +43,18 @@ CREATE TABLE IF NOT EXISTS generation_records (
 )
 """
 
+APP_SETTINGS_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS app_settings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    key TEXT UNIQUE NOT NULL,
+    value TEXT NOT NULL,
+    is_secret INTEGER NOT NULL DEFAULT 0,
+    description TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+)
+"""
+
 
 def get_connection(database_path: Path | str | None = None) -> sqlite3.Connection:
     selected_path = database_path if database_path is not None else DATABASE_PATH
@@ -84,4 +96,5 @@ def init_db(database_path: Path | str | None = None) -> None:
         for column_name, statement in record_column_statements.items():
             if column_name not in record_columns:
                 connection.execute(statement)
+        connection.execute(APP_SETTINGS_TABLE_SQL)
         connection.commit()
