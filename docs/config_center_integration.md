@@ -72,3 +72,11 @@ python scripts/bootstrap_config_center.py --yes --overwrite-token
 - 也可以选择“config-center 优先，本地环境变量兜底”
 - `/health` 只显示安全摘要，不暴露真实密钥
 - LLM 启用前仍走 `preflight / smoke / compare / batch` 流程
+
+## v0.7-4 LLM 规范适配
+- runtime-config 请求会带 `env` 和 `clientVersion`。
+- 当前兼容从顶层、`files`、`configs`、`yamlFiles` 中提取 `llm.yaml`。
+- `llm.yaml` 只解析 provider、base URL、model、chat-completions path 和 `LLM_API_KEY_REF`，不解析明文 `LLM_API_KEY`。
+- DeepSeek 使用 chat-completions 兼容方式，默认 path 为 `/chat/completions`。
+- secret-material 手动拉取命令：`python scripts/fetch_config_center_secret_material.py --dry-run`，再按需执行不带 `--dry-run` 的命令。
+- secret-material 只写入 `.config-center/test.secret-material.env`，不打印、不提交、不自动接入正式生成流程。

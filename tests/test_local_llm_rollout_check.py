@@ -79,4 +79,4 @@ def test_json_output_is_safe_and_only_written_when_requested(tmp_path, monkeypat
     assert payload == saved
     assert "sk-secret-key-1234" not in output
     assert "api_key_value" not in output
-    assert payload["version"] == "v0.7-3"
+    assert payload["version"] == "v0.7-4"

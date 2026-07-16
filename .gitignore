@@ -22,6 +22,8 @@ local_llm_rollout_report*.md
 .config-center/*.token.json
 .config-center/.runtime-token.json
 .config-center/.token.json
+.config-center/.secret-material.env
+.config-center/.env
 .tmp/
 .tmp/**
 .pytest_cache/

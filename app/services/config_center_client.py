@@ -5,7 +5,8 @@ import os
 from pathlib import Path
 from urllib import error, request
 
-from app.config import BASE_DIR
+from app.config import APP_VERSION, BASE_DIR
+from app.services.llm_config_parser import extract_llm_yaml
 
 DEFAULT_CONFIG_CENTER_BASE_URL = "http://39.106.61.160:28081"
 DEFAULT_CONFIG_CENTER_PROJECT_CODE = "zhongcaoji"
@@ -48,7 +49,10 @@ def build_runtime_config_url(settings: dict[str, object] | None = None) -> str:
     base_url = str(settings["base_url"]).rstrip("/")
     project_code = str(settings["project_code"])
     env_name = str(settings["env"])
-    return f"{base_url}/internal/config-center/v1/projects/{project_code}/runtime-config?env={env_name}"
+    client_version = str(settings.get("client_version", APP_VERSION))
+    from urllib.parse import urlencode
+    query = urlencode({"env": env_name, "clientVersion": client_version})
+    return f"{base_url}/internal/config-center/v1/projects/{project_code}/runtime-config?{query}"
 
 
 def is_config_center_enabled() -> bool:
@@ -66,6 +70,7 @@ def get_config_center_settings() -> dict[str, object]:
         "env": _get_env("CONFIG_CENTER_ENV", DEFAULT_CONFIG_CENTER_ENV) or DEFAULT_CONFIG_CENTER_ENV,
         "runtime_token_file": str(runtime_token_file.relative_to(BASE_DIR)) if runtime_token_file.is_relative_to(BASE_DIR) else str(runtime_token_file),
         "timeout_seconds": _safe_float(timeout_raw, DEFAULT_CONFIG_CENTER_TIMEOUT_SECONDS),
+        "client_version": _get_env("CONFIG_CENTER_CLIENT_VERSION", APP_VERSION) or APP_VERSION,
     }
 
 
@@ -190,11 +195,61 @@ def fetch_project_config() -> dict[str, object]:
             "error": "runtime_config_invalid_json",
         }
 
+    llm_yaml = extract_llm_yaml(payload)
     return {
         "available": True,
         "project_code": settings["project_code"],
         "env": settings["env"],
         "status_code": status_code,
         "config": payload,
+        "llm_yaml_found": llm_yaml["llm_yaml_found"],
+        "llm_settings": llm_yaml["settings"],
         "error": "",
     }
+
+
+def build_secret_material_url(settings: dict[str, object] | None = None) -> str:
+    settings = settings or get_config_center_settings()
+    base_url = str(settings["base_url"]).rstrip("/")
+    project_code = str(settings["project_code"])
+    env_name = str(settings["env"])
+    from urllib.parse import urlencode
+    query = urlencode({"env": env_name, "format": "env"})
+    return f"{base_url}/internal/config-center/v1/projects/{project_code}/secret-material?{query}"
+
+
+def fetch_secret_material() -> dict[str, object]:
+    settings = get_config_center_settings()
+    token_result = load_runtime_config_token()
+    if not token_result["available"]:
+        return {"available": False, "status_code": None, "content": "", "error": token_result["error"]}
+    try:
+        req = request.Request(
+            build_secret_material_url(settings),
+            headers={"X-Project-Config-Token": str(token_result["token"])},
+            method="GET",
+        )
+        with request.urlopen(req, timeout=float(settings["timeout_seconds"])) as response:
+            status_code = int(response.getcode())
+            body = response.read().decode("utf-8", errors="replace")
+    except error.HTTPError as exc:
+        return {"available": False, "status_code": int(exc.code), "content": "", "error": "secret_material_http_error"}
+    except Exception:
+        return {"available": False, "status_code": None, "content": "", "error": "secret_material_request_failed"}
+
+    content = body
+    try:
+        payload = json.loads(body)
+    except json.JSONDecodeError:
+        payload = None
+    if isinstance(payload, dict):
+        for path in (("env",), ("content",), ("data", "env"), ("data", "content")):
+            current: object = payload
+            for key in path:
+                current = current.get(key) if isinstance(current, dict) else None
+            if isinstance(current, str) and current.strip():
+                content = current
+                break
+    if not content.strip():
+        return {"available": False, "status_code": status_code, "content": "", "error": "secret_material_empty"}
+    return {"available": True, "status_code": status_code, "content": content, "error": ""}

@@ -90,6 +90,10 @@ def _extract_runtime_config_token(payload: object) -> str:
         ("data", "runtimeConfigToken"),
         ("result", "runtimeConfigToken"),
         ("token", "runtimeConfigToken"),
+        ("runtimeTokenFile", "runtimeConfigToken"),
+        ("data", "runtimeTokenFile", "runtimeConfigToken"),
+        ("result", "runtimeTokenFile", "runtimeConfigToken"),
+        ("token", "runtimeTokenFile", "runtimeConfigToken"),
     ]
     for path in candidate_paths:
         current = payload
@@ -102,6 +106,13 @@ def _extract_runtime_config_token(payload: object) -> str:
         if token:
             return token
     return ""
+
+
+def _has_string_runtime_token_file(payload: object) -> bool:
+    containers = [payload]
+    if isinstance(payload, dict):
+        containers.extend(payload.get(key) for key in ("data", "result", "token"))
+    return any(isinstance(item, dict) and isinstance(item.get("runtimeTokenFile"), str) for item in containers)
 
 
 def _top_level_keys(payload: object) -> str:
@@ -172,6 +183,8 @@ def main(argv: list[str] | None = None) -> int:
             _write_runtime_token_file(config, runtime_config_token, overwrite=args.overwrite_token)
         else:
             print("Config center bootstrap succeeded, but runtimeConfigToken was not found in response.")
+            if _has_string_runtime_token_file(response_payload):
+                print("runtimeTokenFile returned but runtimeConfigToken was not found inside it.")
             print(f"Response keys: {_top_level_keys(response_payload)}")
         return 0
 

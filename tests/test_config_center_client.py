@@ -107,10 +107,26 @@ def test_fetch_project_config_success_uses_expected_url_and_header(monkeypatch, 
     assert result["config"] == {"key1": "value1", "key2": "value2"}
     assert result["error"] == ""
     assert "token" not in result
-    assert captured["url"] == "http://39.106.61.160:28081/internal/config-center/v1/projects/zhongcaoji/runtime-config?env=test"
+    assert captured["url"] == "http://39.106.61.160:28081/internal/config-center/v1/projects/zhongcaoji/runtime-config?env=test&clientVersion=v0.7-4"
     assert captured["headers"]["X-project-config-token"] == "super-secret-runtime-token"
     assert captured["method"] == "GET"
     assert captured["timeout"] == 10.0
+
+
+def test_fetch_project_config_extracts_llm_yaml(monkeypatch, tmp_path):
+    token_path = tmp_path / "ok.runtime-token.json"
+    _write_token_file(token_path, {"runtimeConfigToken": "secret-token"})
+    monkeypatch.setenv("CONFIG_CENTER_RUNTIME_TOKEN_FILE", str(token_path))
+    monkeypatch.setattr(
+        config_center_client.request,
+        "urlopen",
+        lambda req, timeout=0: _FakeResponse(200, json.dumps({"files": {"llm.yaml": "LLM_PROVIDER=deepseek\n"}})),
+    )
+
+    result = config_center_client.fetch_project_config()
+
+    assert result["llm_yaml_found"] is True
+    assert result["llm_settings"] == {"LLM_PROVIDER": "deepseek"}
 
 
 def test_fetch_project_config_http_error(monkeypatch, tmp_path):

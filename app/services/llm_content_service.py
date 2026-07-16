@@ -18,6 +18,7 @@ from app.config import (
     CONTENT_ENGINE_TYPE,
     LLM_API_KEY,
     LLM_BASE_URL,
+    LLM_CHAT_COMPLETIONS_PATH,
     LLM_MAX_RETRIES,
     LLM_MAX_RETRIES_RAW,
     LLM_MODEL,
@@ -76,6 +77,8 @@ class LLMConfigStatus:
     llm_api_key_source: str = "missing"
     llm_timeout_seconds_source: str = "default"
     llm_max_retries_source: str = "default"
+    llm_chat_completions_path: str = "/chat/completions"
+    llm_chat_completions_path_source: str = "default"
 
 
 @dataclass(frozen=True)
@@ -130,14 +133,15 @@ def _safe_int(value: str, default: int = 1) -> tuple[int, bool]:
         return default, False
 
 
-def _resolve_base_url(base_url: str) -> str:
+def _resolve_base_url(base_url: str, chat_completions_path: str = "/chat/completions") -> str:
     cleaned = base_url.strip()
     parsed = urlparse(cleaned)
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
         return ""
-    if cleaned.endswith("/chat/completions"):
+    path = "/" + str(chat_completions_path or "/chat/completions").lstrip("/")
+    if cleaned.endswith(path):
         return cleaned
-    return f"{cleaned.rstrip('/')}/chat/completions"
+    return f"{cleaned.rstrip('/')}{path}"
 
 
 def get_llm_config_status(
@@ -158,12 +162,13 @@ def get_llm_config_status(
     )
     requested_engine_type = str(content_engine_setting.get("value") or "rule_based").strip() or "rule_based"
     resolved = get_runtime_config_values(
-        ["LLM_PROVIDER", "LLM_API_KEY", "LLM_BASE_URL", "LLM_MODEL", "LLM_TIMEOUT_SECONDS", "LLM_MAX_RETRIES"],
+        ["LLM_PROVIDER", "LLM_API_KEY", "LLM_BASE_URL", "LLM_MODEL", "LLM_CHAT_COMPLETIONS_PATH", "LLM_TIMEOUT_SECONDS", "LLM_MAX_RETRIES"],
         defaults={
             "LLM_PROVIDER": LLM_PROVIDER,
             "LLM_API_KEY": LLM_API_KEY,
             "LLM_BASE_URL": LLM_BASE_URL,
             "LLM_MODEL": LLM_MODEL,
+            "LLM_CHAT_COMPLETIONS_PATH": LLM_CHAT_COMPLETIONS_PATH,
             "LLM_TIMEOUT_SECONDS": LLM_TIMEOUT_SECONDS_RAW,
             "LLM_MAX_RETRIES": LLM_MAX_RETRIES_RAW,
         },
@@ -175,6 +180,7 @@ def get_llm_config_status(
     model = str(llm_model if llm_model is not None else resolved["LLM_MODEL"]["value"] or "").strip()
     timeout_raw = str(llm_timeout_seconds_raw if llm_timeout_seconds_raw is not None else resolved["LLM_TIMEOUT_SECONDS"]["value"] or "15").strip() or "15"
     retries_raw = str(llm_max_retries_raw if llm_max_retries_raw is not None else resolved["LLM_MAX_RETRIES"]["value"] or "1").strip() or "1"
+    chat_path = str(resolved["LLM_CHAT_COMPLETIONS_PATH"]["value"] or "/chat/completions").strip() or "/chat/completions"
     sources = {key: ("argument" if value is not None else resolved[key]["source"]) for key, value in {
         "LLM_PROVIDER": llm_provider,
         "LLM_BASE_URL": llm_base_url,
@@ -200,6 +206,7 @@ def get_llm_config_status(
             llm_provider_source=sources["LLM_PROVIDER"], llm_base_url_source=sources["LLM_BASE_URL"],
             llm_model_source=sources["LLM_MODEL"], llm_api_key_source=sources["LLM_API_KEY"],
             llm_timeout_seconds_source=sources["LLM_TIMEOUT_SECONDS"], llm_max_retries_source=sources["LLM_MAX_RETRIES"],
+            llm_chat_completions_path=chat_path, llm_chat_completions_path_source=resolved["LLM_CHAT_COMPLETIONS_PATH"]["source"],
         )
 
     if requested_engine_type != "llm_openai_compatible":
@@ -218,16 +225,17 @@ def get_llm_config_status(
             llm_provider_source=sources["LLM_PROVIDER"], llm_base_url_source=sources["LLM_BASE_URL"],
             llm_model_source=sources["LLM_MODEL"], llm_api_key_source=sources["LLM_API_KEY"],
             llm_timeout_seconds_source=sources["LLM_TIMEOUT_SECONDS"], llm_max_retries_source=sources["LLM_MAX_RETRIES"],
+            llm_chat_completions_path=chat_path, llm_chat_completions_path_source=resolved["LLM_CHAT_COMPLETIONS_PATH"]["source"],
         )
 
     timeout_seconds, timeout_valid = _safe_float(timeout_raw, 15.0)
     max_retries, retries_valid = _safe_int(retries_raw, 1)
-    base_url_resolved = _resolve_base_url(base_url)
+    base_url_resolved = _resolve_base_url(base_url, chat_path)
 
     missing_fields: list[str] = []
     invalid_fields: list[str] = []
 
-    if provider != "openai_compatible":
+    if provider not in {"openai_compatible", "deepseek"}:
         invalid_fields.append("LLM_PROVIDER")
     if not api_key:
         missing_fields.append("LLM_API_KEY")
@@ -260,6 +268,7 @@ def get_llm_config_status(
             llm_provider_source=sources["LLM_PROVIDER"], llm_base_url_source=sources["LLM_BASE_URL"],
             llm_model_source=sources["LLM_MODEL"], llm_api_key_source=sources["LLM_API_KEY"],
             llm_timeout_seconds_source=sources["LLM_TIMEOUT_SECONDS"], llm_max_retries_source=sources["LLM_MAX_RETRIES"],
+            llm_chat_completions_path=chat_path, llm_chat_completions_path_source=resolved["LLM_CHAT_COMPLETIONS_PATH"]["source"],
         )
 
     return LLMConfigStatus(
@@ -277,6 +286,7 @@ def get_llm_config_status(
         llm_provider_source=sources["LLM_PROVIDER"], llm_base_url_source=sources["LLM_BASE_URL"],
         llm_model_source=sources["LLM_MODEL"], llm_api_key_source=sources["LLM_API_KEY"],
         llm_timeout_seconds_source=sources["LLM_TIMEOUT_SECONDS"], llm_max_retries_source=sources["LLM_MAX_RETRIES"],
+        llm_chat_completions_path=chat_path, llm_chat_completions_path_source=resolved["LLM_CHAT_COMPLETIONS_PATH"]["source"],
     )
 
 
@@ -588,13 +598,14 @@ def generate_openai_compatible_note_data(
         return LLMContentResult(success=False, error_message=config_status.status_code)
 
     resolved = get_runtime_config_values(
-        ["LLM_MODEL", "LLM_API_KEY", "LLM_BASE_URL"],
-        defaults={"LLM_MODEL": LLM_MODEL, "LLM_API_KEY": LLM_API_KEY, "LLM_BASE_URL": LLM_BASE_URL},
+        ["LLM_MODEL", "LLM_API_KEY", "LLM_BASE_URL", "LLM_CHAT_COMPLETIONS_PATH"],
+        defaults={"LLM_MODEL": LLM_MODEL, "LLM_API_KEY": LLM_API_KEY, "LLM_BASE_URL": LLM_BASE_URL, "LLM_CHAT_COMPLETIONS_PATH": LLM_CHAT_COMPLETIONS_PATH},
         reveal_secret=True,
     )
     model = str(resolved["LLM_MODEL"]["value"] or "")
     api_key = str(resolved["LLM_API_KEY"]["value"] or "")
     base_url = str(resolved["LLM_BASE_URL"]["value"] or "")
+    chat_path = str(resolved["LLM_CHAT_COMPLETIONS_PATH"]["value"] or "/chat/completions")
     request_payload = {
         "model": model,
         "messages": _build_messages(content_input),
@@ -607,7 +618,7 @@ def generate_openai_compatible_note_data(
     }
 
     last_error = "llm_request_failed"
-    endpoint = _resolve_base_url(base_url)
+    endpoint = _resolve_base_url(base_url, chat_path)
     for _ in range(config_status.max_retries + 1):
         try:
             response_payload = _post_chat_completion(

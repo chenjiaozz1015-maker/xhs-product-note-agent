@@ -38,6 +38,8 @@ app.include_router(pages_router)
 async def health() -> dict:
     font_path = get_cjk_font_path()
     content_engine_setting = get_runtime_config_value("CONTENT_ENGINE_TYPE", default=CONTENT_ENGINE_TYPE)
+    chat_path_setting = get_runtime_config_value("LLM_CHAT_COMPLETIONS_PATH", default="/chat/completions")
+    api_key_ref_setting = get_runtime_config_value("LLM_API_KEY_REF", default="")
     resolved_content_engine = str(content_engine_setting["value"] or "rule_based")
     llm_status = get_llm_config_status(resolved_content_engine)
     config_center_settings = get_config_center_settings()
@@ -61,6 +63,9 @@ async def health() -> dict:
         "llm_api_key_source": llm_status.llm_api_key_source,
         "llm_timeout_seconds_source": llm_status.llm_timeout_seconds_source,
         "llm_max_retries_source": llm_status.llm_max_retries_source,
+        "llm_chat_completions_path_configured": bool(chat_path_setting["value"]),
+        "llm_api_key_ref_configured": bool(api_key_ref_setting["value"]),
+        "config_center_llm_yaml_supported": True,
         "uploads_dir_exists": UPLOAD_DIR.exists(),
         "generated_dir_exists": GENERATED_DIR.exists(),
         "static_dir_exists": STATIC_DIR.exists(),

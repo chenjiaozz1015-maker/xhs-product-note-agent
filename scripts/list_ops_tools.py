@@ -36,6 +36,8 @@ dry run: python scripts/bootstrap_config_center.py --dry-run
 bootstrap: python scripts/bootstrap_config_center.py --yes
 check_config_center_runtime.py
 runtime check: python scripts/check_config_center_runtime.py
+fetch_config_center_secret_material.py
+secret material: python scripts/fetch_config_center_secret_material.py --dry-run
 
 Docs:
 

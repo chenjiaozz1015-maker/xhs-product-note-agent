@@ -17,7 +17,7 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 APP_NAME = os.getenv("APP_NAME", "种草机")
 APP_TITLE = os.getenv("APP_TITLE", APP_NAME)
-CODE_APP_VERSION = "v0.7-3"
+CODE_APP_VERSION = "v0.7-4"
 APP_VERSION = os.getenv("APP_VERSION", "").strip() or CODE_APP_VERSION
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))
@@ -30,6 +30,8 @@ LLM_BASE_URL = os.getenv("LLM_BASE_URL", "").strip()
 LLM_MODEL = os.getenv("LLM_MODEL", "").strip()
 LLM_TIMEOUT_SECONDS_RAW = os.getenv("LLM_TIMEOUT_SECONDS", "15").strip() or "15"
 LLM_MAX_RETRIES_RAW = os.getenv("LLM_MAX_RETRIES", "1").strip() or "1"
+LLM_CHAT_COMPLETIONS_PATH = os.getenv("LLM_CHAT_COMPLETIONS_PATH", "/chat/completions").strip() or "/chat/completions"
+LLM_API_KEY_REF = os.getenv("LLM_API_KEY_REF", "").strip()
 POSTER_ENGINE_TYPE = os.getenv("POSTER_ENGINE_TYPE", "pillow").strip() or "pillow"
 
 

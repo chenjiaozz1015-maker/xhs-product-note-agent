@@ -116,6 +116,18 @@ def test_llm_config_status_not_ready_when_api_key_missing(monkeypatch):
     assert "LLM_API_KEY" in status.missing_fields
 
 
+def test_deepseek_provider_is_supported_with_custom_chat_path(monkeypatch):
+    _enable_llm(monkeypatch)
+    monkeypatch.setattr(llm_content_service, "LLM_PROVIDER", "deepseek")
+    monkeypatch.setattr(llm_content_service, "LLM_CHAT_COMPLETIONS_PATH", "/chat/completions")
+
+    status = llm_content_service.get_llm_config_status("llm_openai_compatible")
+
+    assert status.llm_config_ready is True
+    assert status.llm_provider == "deepseek"
+    assert status.llm_chat_completions_path == "/chat/completions"
+
+
 def test_llm_config_status_not_ready_when_base_url_missing(monkeypatch):
     _enable_llm(monkeypatch)
     monkeypatch.setattr(llm_content_service, "LLM_BASE_URL", "")

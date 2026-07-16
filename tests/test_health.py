@@ -10,7 +10,10 @@ def test_health_returns_version_and_directory_status():
     assert payload["status"] == "ok"
     assert payload["app"] == "zhongcaoji"
     assert payload["version"] == APP_VERSION
-    assert payload["version"] == "v0.7-3"
+    assert payload["version"] == "v0.7-4"
+    assert "config_center_llm_yaml_supported" in payload
+    assert "llm_chat_completions_path_configured" in payload
+    assert "llm_api_key_ref_configured" in payload
     assert payload["content_engine_type"]
     assert payload["poster_engine_type"]
     assert payload["llm_provider"] == "openai_compatible"

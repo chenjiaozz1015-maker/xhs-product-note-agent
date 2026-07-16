@@ -4,7 +4,7 @@
 上传商品图片、商品名称、商品类目和一句描述，自动生成小红书风格图片素材包与发布文案。
 
 ## 当前版本
-种草机 v0.7-3 LLM 本地灰度验证版
+种草机 v0.7-4 配置中心 LLM 规范适配版
 
 ## 在线试用
 https://zhongcaoji.onrender.com/
@@ -298,13 +298,13 @@ scripts/README.md
 
 ```bash
 python scripts/settings_set.py --key LLM_MODEL --value "qwen-plus"
-python scripts/settings_set.py --key LLM_API_KEY --value "your-api-key" --secret
+python scripts/settings_set.py --key LLM_API_KEY_REF --value "secret://project/env/providers/llm/provider/api-key"
 python scripts/settings_get.py --key LLM_MODEL
 python scripts/settings_get.py --key LLM_API_KEY
 python scripts/settings_list.py
 ```
 
-包含 `API_KEY`、`TOKEN`、`SECRET`、`PASSWORD` 或 `PRIVATE_KEY` 的 key 会自动标记为 secret。secret 默认只显示脱敏值；`settings_get.py --reveal` 仅将明文输出到当前终端。不要把真实密钥写入代码、README、`.env.example` 或 Git。
+包含 `API_KEY`、`TOKEN`、`SECRET`、`PASSWORD` 或 `PRIVATE_KEY` 的 key 会自动标记为 secret。LLM 明文 API Key 不应写入 `app_settings`、代码、README、`.env.example` 或 Git；运行时应由受保护的环境变量或 secret-material 提供。
 
 ## 本地 LLM 灰度验证
 配置写入 `app_settings` 后，可手动执行：
@@ -334,6 +334,18 @@ python scripts/bootstrap_config_center.py --yes
 ```text
 docs/config_center_integration.md
 ```
+
+## 配置中心 LLM 规范适配
+- runtime-config 请求会带 `env` 与 `clientVersion`。
+- 支持从响应中的 `llm.yaml`、`files.llm.yaml`、`configs.llm.yaml`、`yamlFiles.llm.yaml` 提取安全配置字段。
+- 当前支持 `LLM_PROVIDER=deepseek` 走 chat-completions 兼容方式，路径由 `LLM_CHAT_COMPLETIONS_PATH` 控制，默认 `/chat/completions`。
+- `llm.yaml` 只保存 `LLM_API_KEY_REF`，不保存明文 `LLM_API_KEY`。
+- secret-material 只通过手动脚本写入本地受保护文件：
+```bash
+python scripts/fetch_config_center_secret_material.py --dry-run
+python scripts/fetch_config_center_secret_material.py
+```
+- 当前不自动启用线上 LLM，不改变 `CONTENT_ENGINE_TYPE`，不重复 bootstrap。
 
 ## 配置中心接入状态
 - 当前已完成 `projectCode=zhongcaoji` 的 bootstrap，不要重复执行
@@ -419,7 +431,7 @@ py -m pytest -q --basetemp .tmp/pytest
 ```
 
 ## /health 版本说明
-`/health` 返回的 `version` 默认读取 `app/config.py` 里的代码版本，当前默认值为 `v0.7-3`。
+`/health` 返回的 `version` 默认读取 `app/config.py` 里的代码版本，当前默认值为 `v0.7-4`。
 `APP_VERSION` 只作为可选覆盖项。
 
 部署建议：
@@ -430,6 +442,7 @@ py -m pytest -q --basetemp .tmp/pytest
 如果 Render 线上 `/health` 仍显示旧版本，优先检查 Render Environment 里是否配置过 `APP_VERSION`；如果配过，建议删除该环境变量后重新部署，让版本号回到代码默认值。
 
 ## 版本记录
+- v0.7-4：runtime-config 请求增加 `clientVersion`；兼容解析 config-center 下发的 `llm.yaml`；支持 DeepSeek provider 和自定义 chat-completions path；新增 secret-material 手动拉取脚本；secret 不进入 Git、README、`.env.example` 或日志；不正式启用 LLM。
 - v0.7-3：新增 `scripts/local_llm_rollout_check.py`；支持基于 app_settings 的本地 LLM 灰度验证；串联配置检查、smoke、单品对比和批量评测；支持跳过步骤和 JSON 报告；不自动启用 LLM、不改 `CONTENT_ENGINE_TYPE`、不扣额度、不写记录、不生成图片。
 - v0.7-2：LLM 配置支持环境变量 > `app_settings` > 代码默认值；支持 `CONTENT_ENGINE_TYPE` 从 `app_settings` 兜底读取；`/health` 和 LLM 检查脚本显示配置来源与安全状态；secret 不显示明文；线上默认仍建议 `CONTENT_ENGINE_TYPE=rule_based`。
 - v0.7-1：新增本地 `app_settings` 配置表、`settings_service.py` 和 `settings_set.py` / `settings_get.py` / `settings_list.py` 运营脚本；支持 secret 配置脱敏；`/health` 增加 `app_settings_ready` 与 `app_settings_count`；当前不改变正式配置来源、不启用 LLM、不依赖 config-center。

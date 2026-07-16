@@ -189,6 +189,44 @@ def test_bootstrap_writes_runtime_token_from_token_path(monkeypatch, tmp_path):
     assert json.loads(token_file.read_text(encoding="utf-8")) == {"runtimeConfigToken": "secret-token-token"}
 
 
+def test_bootstrap_writes_runtime_token_from_runtime_token_file_path(monkeypatch, tmp_path):
+    module = _load_module()
+    token_file = tmp_path / "nested-runtime-file.runtime-token.json"
+    monkeypatch.setenv("CONFIG_CENTER_INVITE_CODE", "secret-invite-code")
+    monkeypatch.setenv("CONFIG_CENTER_RUNTIME_TOKEN_FILE", str(token_file))
+    monkeypatch.setattr(module, "_post_bootstrap", lambda *args, **kwargs: (201, '{"runtimeTokenFile":{"runtimeConfigToken":"nested-runtime-token"}}'))
+
+    assert module.main(["--yes"]) == 0
+    assert json.loads(token_file.read_text(encoding="utf-8")) == {"runtimeConfigToken": "nested-runtime-token"}
+
+
+def test_bootstrap_writes_runtime_token_from_nested_runtime_token_file_paths(monkeypatch, tmp_path):
+    module = _load_module()
+    for wrapper in ("data", "result", "token"):
+        token_file = tmp_path / f"{wrapper}.runtime-token.json"
+        monkeypatch.setenv("CONFIG_CENTER_INVITE_CODE", "secret-invite-code")
+        monkeypatch.setenv("CONFIG_CENTER_RUNTIME_TOKEN_FILE", str(token_file))
+        body = json.dumps({wrapper: {"runtimeTokenFile": {"runtimeConfigToken": f"{wrapper}-nested-token"}}})
+        monkeypatch.setattr(module, "_post_bootstrap", lambda *args, body=body, **kwargs: (201, body))
+
+        assert module.main(["--yes"]) == 0
+        assert json.loads(token_file.read_text(encoding="utf-8")) == {"runtimeConfigToken": f"{wrapper}-nested-token"}
+
+
+def test_runtime_token_file_string_is_not_written_as_token(monkeypatch, tmp_path, capsys):
+    module = _load_module()
+    token_file = tmp_path / "string-runtime-file.runtime-token.json"
+    monkeypatch.setenv("CONFIG_CENTER_INVITE_CODE", "secret-invite-code")
+    monkeypatch.setenv("CONFIG_CENTER_RUNTIME_TOKEN_FILE", str(token_file))
+    monkeypatch.setattr(module, "_post_bootstrap", lambda *args, **kwargs: (201, '{"runtimeTokenFile":"sensitive-file-content"}'))
+
+    assert module.main(["--yes"]) == 0
+    captured = capsys.readouterr().out
+    assert "runtimeTokenFile returned but runtimeConfigToken was not found inside it." in captured
+    assert "sensitive-file-content" not in captured
+    assert not token_file.exists()
+
+
 def test_bootstrap_success_without_runtime_token_does_not_crash(monkeypatch, tmp_path, capsys):
     module = _load_module()
     token_file = tmp_path / "missing.runtime-token.json"

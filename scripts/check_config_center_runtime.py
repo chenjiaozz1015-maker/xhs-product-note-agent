@@ -33,6 +33,9 @@ def main() -> int:
         print("Status: READY")
         print(f"HTTP status: {result['status_code']}")
         print(f"Config keys: {config_keys}")
+        print(f"llm.yaml found: {str(result.get('llm_yaml_found', False)).lower()}")
+        llm_settings = result.get("llm_settings") if isinstance(result.get("llm_settings"), dict) else {}
+        print(f"LLM config keys: {', '.join(sorted(llm_settings)) if llm_settings else '(none)'}")
         return 0
 
     print("Status: FAILED")

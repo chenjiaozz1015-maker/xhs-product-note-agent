@@ -33,6 +33,7 @@ def test_list_ops_tools_can_run_and_print_all_scripts(capsys):
     assert "engine_usage_report.py" in captured
     assert "bootstrap_config_center.py" in captured
     assert "check_config_center_runtime.py" in captured
+    assert "fetch_config_center_secret_material.py" in captured
     assert "settings_set.py" in captured
     assert "settings_get.py" in captured
     assert "settings_list.py" in captured
@@ -65,6 +66,7 @@ def test_scripts_readme_exists_and_documents_boundaries():
         "settings_get.py",
         "settings_list.py",
         "local_llm_rollout_check.py",
+        "fetch_config_center_secret_material.py",
     ]:
         assert expected in content
 
