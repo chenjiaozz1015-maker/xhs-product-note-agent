@@ -183,3 +183,15 @@ python scripts/check_llm_config.py
 ```
 
 检查脚本和 preflight 会显示每个配置的来源以及 `configured / missing` 状态，不会显示完整 secret。正式线上仍建议在 Render 保持 `CONTENT_ENGINE_TYPE=rule_based`，本轮不会自动启用 LLM。
+
+## 本地 LLM 灰度验证
+
+```bash
+python scripts/local_llm_rollout_check.py
+python scripts/local_llm_rollout_check.py --skip-smoke
+python scripts/local_llm_rollout_check.py --skip-compare
+python scripts/local_llm_rollout_check.py --skip-batch
+python scripts/local_llm_rollout_check.py --format json --output local_llm_rollout_report.json
+```
+
+该脚本只读本地 `app_settings`。配置不完整时不会请求 LLM；配置完整且未跳过时才会执行 smoke、单品对比和批量评测。它不修改 `CONTENT_ENGINE_TYPE`，不扣额度、不写 `generation_records`、不生成图片、不请求 config-center。报告文件已加入 `.gitignore`，不要提交真实密钥。

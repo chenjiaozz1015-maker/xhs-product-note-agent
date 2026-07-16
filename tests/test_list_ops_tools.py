@@ -29,6 +29,7 @@ def test_list_ops_tools_can_run_and_print_all_scripts(capsys):
     assert "smoke_check_llm.py" in captured
     assert "compare_content_engines.py" in captured
     assert "batch_evaluate_content.py" in captured
+    assert "local_llm_rollout_check.py" in captured
     assert "engine_usage_report.py" in captured
     assert "bootstrap_config_center.py" in captured
     assert "check_config_center_runtime.py" in captured
@@ -63,6 +64,7 @@ def test_scripts_readme_exists_and_documents_boundaries():
         "settings_set.py",
         "settings_get.py",
         "settings_list.py",
+        "local_llm_rollout_check.py",
     ]:
         assert expected in content
 

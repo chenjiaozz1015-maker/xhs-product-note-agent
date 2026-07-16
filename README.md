@@ -4,7 +4,7 @@
 上传商品图片、商品名称、商品类目和一句描述，自动生成小红书风格图片素材包与发布文案。
 
 ## 当前版本
-种草机 v0.7-2 LLM 配置兜底版
+种草机 v0.7-3 LLM 本地灰度验证版
 
 ## 在线试用
 https://zhongcaoji.onrender.com/
@@ -306,6 +306,19 @@ python scripts/settings_list.py
 
 包含 `API_KEY`、`TOKEN`、`SECRET`、`PASSWORD` 或 `PRIVATE_KEY` 的 key 会自动标记为 secret。secret 默认只显示脱敏值；`settings_get.py --reveal` 仅将明文输出到当前终端。不要把真实密钥写入代码、README、`.env.example` 或 Git。
 
+## 本地 LLM 灰度验证
+配置写入 `app_settings` 后，可手动执行：
+
+```bash
+python scripts/local_llm_rollout_check.py
+python scripts/local_llm_rollout_check.py --skip-smoke
+python scripts/local_llm_rollout_check.py --skip-compare
+python scripts/local_llm_rollout_check.py --skip-batch
+python scripts/local_llm_rollout_check.py --format json --output local_llm_rollout_report.json
+```
+
+脚本会依次检查配置、执行 smoke、单品对比和批量评测。配置不完整时直接 `NOT_READY`，不会请求 LLM；脚本不会修改 `CONTENT_ENGINE_TYPE`，不会扣额度、写生成记录、生成图片或请求 config-center。线上仍需人工确认后再考虑调整 Render 配置，默认保持 `CONTENT_ENGINE_TYPE=rule_based`。
+
 LLM 灰度启用手册：
 ```text
 docs/llm_rollout_runbook.md
@@ -406,7 +419,7 @@ py -m pytest -q --basetemp .tmp/pytest
 ```
 
 ## /health 版本说明
-`/health` 返回的 `version` 默认读取 `app/config.py` 里的代码版本，当前默认值为 `v0.7-2`。
+`/health` 返回的 `version` 默认读取 `app/config.py` 里的代码版本，当前默认值为 `v0.7-3`。
 `APP_VERSION` 只作为可选覆盖项。
 
 部署建议：
@@ -417,6 +430,7 @@ py -m pytest -q --basetemp .tmp/pytest
 如果 Render 线上 `/health` 仍显示旧版本，优先检查 Render Environment 里是否配置过 `APP_VERSION`；如果配过，建议删除该环境变量后重新部署，让版本号回到代码默认值。
 
 ## 版本记录
+- v0.7-3：新增 `scripts/local_llm_rollout_check.py`；支持基于 app_settings 的本地 LLM 灰度验证；串联配置检查、smoke、单品对比和批量评测；支持跳过步骤和 JSON 报告；不自动启用 LLM、不改 `CONTENT_ENGINE_TYPE`、不扣额度、不写记录、不生成图片。
 - v0.7-2：LLM 配置支持环境变量 > `app_settings` > 代码默认值；支持 `CONTENT_ENGINE_TYPE` 从 `app_settings` 兜底读取；`/health` 和 LLM 检查脚本显示配置来源与安全状态；secret 不显示明文；线上默认仍建议 `CONTENT_ENGINE_TYPE=rule_based`。
 - v0.7-1：新增本地 `app_settings` 配置表、`settings_service.py` 和 `settings_set.py` / `settings_get.py` / `settings_list.py` 运营脚本；支持 secret 配置脱敏；`/health` 增加 `app_settings_ready` 与 `app_settings_count`；当前不改变正式配置来源、不启用 LLM、不依赖 config-center。
 - v0.6-8：新增 `scripts/reset_user_password.py`；支持运营侧按 email 重置用户密码；使用现有密码哈希逻辑；不保存明文密码；不打印新密码；不修改套餐、额度、生成记录；不做前端忘记密码页面；不接邮件/短信；不影响正式生成流程。

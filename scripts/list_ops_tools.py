@@ -23,6 +23,7 @@ Content evaluation:
 
 compare_content_engines.py
 batch_evaluate_content.py
+local_llm_rollout_check.py
 
 Monitoring:
 
