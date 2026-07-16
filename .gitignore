@@ -18,6 +18,7 @@ content_eval*.json
 compare_result*.json
 local_llm_rollout_report*.json
 local_llm_rollout_report*.md
+llm_gray_rollout_ready*.json
 .config-center/*.runtime-token.json
 .config-center/*.token.json
 .config-center/.runtime-token.json
@@ -30,3 +31,4 @@ local_llm_rollout_report*.md
 
 .config-center/*.secret-material.env
 .config-center/*.env
+data/.db

@@ -19,6 +19,7 @@
 | `manage_user_plan.py` | 查看用户、手动开通或切换套餐 | 否 | `set-plan` 会修改；`show/list` 不修改 | `python scripts/manage_user_plan.py show --email user@example.com` | 运营查看用户状态、手动开通套餐 |
 | `check_llm_config.py` | 检查 LLM 配置是否完整 | 否 | 否 | `python scripts/check_llm_config.py` | 启用 LLM 前先看配置是否齐全 |
 | `preflight_llm_rollout.py` | LLM 灰度启用前只读预检 | 否 | 否 | `python scripts/preflight_llm_rollout.py` | 启用前走一遍预检清单 |
+| `llm_gray_rollout_ready.py` | LLM 灰度上线前只读准备检查 | 否 | 否 | `python scripts/llm_gray_rollout_ready.py` | 判断是否进入人工灰度决策 |
 | `smoke_check_llm.py` | 手动请求一次 LLM，验证真实连通性 | 是，配置完整时会请求一次 | 否 | `python scripts/smoke_check_llm.py` | 手工验证模型接口能否返回可用结果 |
 | `compare_content_engines.py` | 单个商品对比 `rule_based` 和 LLM 文案 | 是，配置完整时会请求一次 | 否 | `python scripts/compare_content_engines.py` | 看单个样例的规则文案和 LLM 文案差异 |
 | `batch_evaluate_content.py` | 多个样例批量评测 `rule_based` 和 LLM 文案 | 是，配置完整时会请求模型接口 | 否 | `python scripts/batch_evaluate_content.py --format markdown --output content_eval.md` | 做小样本批量质量对比 |
@@ -116,6 +117,25 @@ python scripts/check_llm_config.py
 python scripts/smoke_check_llm.py
 python scripts/compare_content_engines.py
 python scripts/batch_evaluate_content.py
+python scripts/llm_gray_rollout_ready.py
+```
+
+### 2.1 LLM 灰度上线准备检查
+
+用途：LLM 灰度上线前只读准备检查。
+
+- 是否请求外网：否
+- 是否修改数据库：否
+- 是否扣额度：否
+- 是否写记录：否
+- 是否生成图片：否
+
+常用命令：
+
+```bash
+python scripts/llm_gray_rollout_ready.py
+python scripts/llm_gray_rollout_ready.py --json
+python scripts/llm_gray_rollout_ready.py --json --output llm_gray_rollout_ready.json
 ```
 
 ### 3. LLM 启用后观察

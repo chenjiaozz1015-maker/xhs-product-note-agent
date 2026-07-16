@@ -66,6 +66,7 @@ async def health() -> dict:
         "llm_chat_completions_path_configured": bool(chat_path_setting["value"]),
         "llm_api_key_ref_configured": bool(api_key_ref_setting["value"]),
         "config_center_llm_yaml_supported": True,
+        "llm_gray_rollout_supported": True,
         "uploads_dir_exists": UPLOAD_DIR.exists(),
         "generated_dir_exists": GENERATED_DIR.exists(),
         "static_dir_exists": STATIC_DIR.exists(),

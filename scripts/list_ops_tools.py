@@ -18,6 +18,8 @@ LLM rollout:
 preflight_llm_rollout.py
 check_llm_config.py
 smoke_check_llm.py
+llm_gray_rollout_ready.py
+readiness: python scripts/llm_gray_rollout_ready.py
 
 Content evaluation:
 
@@ -43,6 +45,7 @@ Docs:
 
 scripts/README.md
 docs/llm_rollout_runbook.md
+docs/llm_gray_rollout_runbook.md
 docs/config_center_integration.md
 
 Runtime settings:

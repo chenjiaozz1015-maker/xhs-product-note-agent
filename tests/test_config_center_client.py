@@ -107,7 +107,7 @@ def test_fetch_project_config_success_uses_expected_url_and_header(monkeypatch, 
     assert result["config"] == {"key1": "value1", "key2": "value2"}
     assert result["error"] == ""
     assert "token" not in result
-    assert captured["url"] == "http://39.106.61.160:28081/internal/config-center/v1/projects/zhongcaoji/runtime-config?env=test&clientVersion=v0.7-4"
+    assert captured["url"] == "http://39.106.61.160:28081/internal/config-center/v1/projects/zhongcaoji/runtime-config?env=test&clientVersion=v0.7-5"
     assert captured["headers"]["X-project-config-token"] == "super-secret-runtime-token"
     assert captured["method"] == "GET"
     assert captured["timeout"] == 10.0

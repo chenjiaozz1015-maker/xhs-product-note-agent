@@ -26,6 +26,7 @@ def test_list_ops_tools_can_run_and_print_all_scripts(capsys):
     assert "reset_user_password.py" in captured
     assert "check_llm_config.py" in captured
     assert "preflight_llm_rollout.py" in captured
+    assert "llm_gray_rollout_ready.py" in captured
     assert "smoke_check_llm.py" in captured
     assert "compare_content_engines.py" in captured
     assert "batch_evaluate_content.py" in captured
@@ -40,6 +41,7 @@ def test_list_ops_tools_can_run_and_print_all_scripts(capsys):
     assert "docs/config_center_integration.md" in captured
     assert "scripts/README.md" in captured
     assert "docs/llm_rollout_runbook.md" in captured
+    assert "docs/llm_gray_rollout_runbook.md" in captured
 
 
 def test_scripts_readme_exists_and_documents_boundaries():
@@ -67,6 +69,7 @@ def test_scripts_readme_exists_and_documents_boundaries():
         "settings_list.py",
         "local_llm_rollout_check.py",
         "fetch_config_center_secret_material.py",
+        "llm_gray_rollout_ready.py",
     ]:
         assert expected in content
 
@@ -81,4 +84,5 @@ def test_project_readme_includes_ops_tool_entry():
     assert "python scripts/check_config_center_runtime.py" in content
     assert "scripts/README.md" in content
     assert "docs/llm_rollout_runbook.md" in content
+    assert "docs/llm_gray_rollout_runbook.md" in content
     assert "docs/config_center_integration.md" in content
