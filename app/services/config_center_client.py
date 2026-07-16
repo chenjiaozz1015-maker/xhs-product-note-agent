@@ -208,24 +208,38 @@ def fetch_project_config() -> dict[str, object]:
     }
 
 
-def build_secret_material_url(settings: dict[str, object] | None = None) -> str:
+SECRET_MATERIAL_CONTENT_PATHS = (
+    ("material",),
+    ("content",),
+    ("envContent",),
+    ("env",),
+    ("data", "material"),
+    ("data", "content"),
+    ("data", "env"),
+)
+
+
+def build_secret_material_url(settings: dict[str, object] | None = None, *, raw: bool = False) -> str:
     settings = settings or get_config_center_settings()
     base_url = str(settings["base_url"]).rstrip("/")
     project_code = str(settings["project_code"])
     env_name = str(settings["env"])
     from urllib.parse import urlencode
-    query = urlencode({"env": env_name, "format": "env"})
+    params: dict[str, object] = {"env": env_name, "format": "env"}
+    if raw:
+        params["raw"] = "true"
+    query = urlencode(params)
     return f"{base_url}/internal/config-center/v1/projects/{project_code}/secret-material?{query}"
 
 
-def fetch_secret_material() -> dict[str, object]:
+def fetch_secret_material(*, raw: bool = False) -> dict[str, object]:
     settings = get_config_center_settings()
     token_result = load_runtime_config_token()
     if not token_result["available"]:
         return {"available": False, "status_code": None, "content": "", "error": token_result["error"]}
     try:
         req = request.Request(
-            build_secret_material_url(settings),
+            build_secret_material_url(settings, raw=raw),
             headers={"X-Project-Config-Token": str(token_result["token"])},
             method="GET",
         )
@@ -238,18 +252,19 @@ def fetch_secret_material() -> dict[str, object]:
         return {"available": False, "status_code": None, "content": "", "error": "secret_material_request_failed"}
 
     content = body
-    try:
-        payload = json.loads(body)
-    except json.JSONDecodeError:
-        payload = None
-    if isinstance(payload, dict):
-        for path in (("env",), ("content",), ("data", "env"), ("data", "content")):
-            current: object = payload
-            for key in path:
-                current = current.get(key) if isinstance(current, dict) else None
-            if isinstance(current, str) and current.strip():
-                content = current
-                break
+    if not raw:
+        try:
+            payload = json.loads(body)
+        except json.JSONDecodeError:
+            payload = None
+        if isinstance(payload, dict):
+            for path in SECRET_MATERIAL_CONTENT_PATHS:
+                current: object = payload
+                for key in path:
+                    current = current.get(key) if isinstance(current, dict) else None
+                if isinstance(current, str) and current.strip():
+                    content = current
+                    break
     if not content.strip():
         return {"available": False, "status_code": status_code, "content": "", "error": "secret_material_empty"}
     return {"available": True, "status_code": status_code, "content": content, "error": ""}

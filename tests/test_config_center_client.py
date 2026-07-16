@@ -180,3 +180,28 @@ def test_fetch_project_config_request_failure(monkeypatch, tmp_path):
     assert result["available"] is False
     assert result["status_code"] is None
     assert result["error"] == "runtime_config_request_failed"
+
+
+def test_secret_material_raw_url_contains_raw_true(monkeypatch, tmp_path):
+    token_path = tmp_path / "ok.runtime-token.json"
+    _write_token_file(token_path, {"runtimeConfigToken": "secret-token"})
+    monkeypatch.setenv("CONFIG_CENTER_RUNTIME_TOKEN_FILE", str(token_path))
+    monkeypatch.setenv("CONFIG_CENTER_BASE_URL", "http://39.106.61.160:28081")
+    monkeypatch.setenv("CONFIG_CENTER_PROJECT_CODE", "zhongcaoji")
+    monkeypatch.setenv("CONFIG_CENTER_ENV", "test")
+    captured = {}
+
+    def fake_urlopen(req, timeout=0):
+        captured["url"] = req.full_url
+        return _FakeResponse(200, "LLM_API_KEY=secret-value\n")
+
+    monkeypatch.setattr(config_center_client.request, "urlopen", fake_urlopen)
+
+    result = config_center_client.fetch_secret_material(raw=True)
+
+    assert result["available"] is True
+    assert result["content"] == "LLM_API_KEY=secret-value\n"
+    assert captured["url"] == (
+        "http://39.106.61.160:28081/internal/config-center/v1/projects/"
+        "zhongcaoji/secret-material?env=test&format=env&raw=true"
+    )

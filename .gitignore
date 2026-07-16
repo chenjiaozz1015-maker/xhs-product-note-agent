@@ -27,3 +27,6 @@ local_llm_rollout_report*.md
 .tmp/
 .tmp/**
 .pytest_cache/
+
+.config-center/*.secret-material.env
+.config-center/*.env

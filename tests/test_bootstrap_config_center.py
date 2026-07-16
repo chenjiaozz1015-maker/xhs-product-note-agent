@@ -2,6 +2,8 @@
 
 import importlib.util
 import json
+import socket
+from io import BytesIO
 from pathlib import Path
 from urllib import error
 
@@ -292,6 +294,149 @@ def test_failure_output_does_not_print_invite_code(monkeypatch, capsys, tmp_path
     assert exit_code == 1
     assert "Config center bootstrap failed" in captured.out
     assert "secret-invite-code" not in captured.out
+    assert "inviteCode" not in captured.out
+    assert not token_file.exists()
+
+
+def test_http_error_prints_safe_diagnostics(monkeypatch, capsys, tmp_path):
+    module = _load_module()
+    token_file = tmp_path / "http-error.runtime-token.json"
+    response_body = (
+        '{"inviteCode":"secret-invite-code",'
+        '"runtimeConfigToken":"secret-runtime-token",'
+        '"message":"secret-material"}'
+    )
+
+    def fake_post(*args, **kwargs):
+        raise error.HTTPError(
+            url="http://example.test/bootstrap",
+            code=401,
+            msg="Unauthorized",
+            hdrs={},
+            fp=BytesIO(response_body.encode("utf-8")),
+        )
+
+    monkeypatch.setenv("CONFIG_CENTER_INVITE_CODE", "secret-invite-code")
+    monkeypatch.setenv("CONFIG_CENTER_RUNTIME_TOKEN_FILE", str(token_file))
+    monkeypatch.setattr(module, "_post_bootstrap", fake_post)
+
+    exit_code = module.main(["--yes"])
+    output = capsys.readouterr().out
+
+    assert exit_code == 1
+    assert "status_code: 401" in output
+    assert "error_reason: http_error" in output
+    assert "error_type: HTTPError" in output
+    assert "response_preview:" in output
+    assert "secret-invite-code" not in output
+    assert "secret-runtime-token" not in output
+    assert "runtimeConfigToken" not in output
+    assert "inviteCode" not in output
+    assert "LLM_API_KEY" not in output
+    assert "secret-material" not in output
+    assert not token_file.exists()
+
+
+def test_url_error_prints_safe_reason(monkeypatch, capsys, tmp_path):
+    module = _load_module()
+    token_file = tmp_path / "url-error.runtime-token.json"
+
+    monkeypatch.setenv("CONFIG_CENTER_INVITE_CODE", "secret-invite-code")
+    monkeypatch.setenv("CONFIG_CENTER_RUNTIME_TOKEN_FILE", str(token_file))
+    monkeypatch.setattr(
+        module,
+        "_post_bootstrap",
+        lambda *args, **kwargs: (_ for _ in ()).throw(error.URLError("secret-material refused")),
+    )
+
+    exit_code = module.main(["--yes"])
+    output = capsys.readouterr().out
+
+    assert exit_code == 1
+    assert "status_code: 0" in output
+    assert "error_reason: url_error" in output
+    assert "reason_type: str" in output
+    assert "secret-material" not in output
+    assert "secret-invite-code" not in output
+    assert "inviteCode" not in output
+    assert not token_file.exists()
+
+
+def test_timeout_prints_timeout_reason(monkeypatch, capsys, tmp_path):
+    module = _load_module()
+    token_file = tmp_path / "timeout.runtime-token.json"
+
+    monkeypatch.setenv("CONFIG_CENTER_INVITE_CODE", "secret-invite-code")
+    monkeypatch.setenv("CONFIG_CENTER_RUNTIME_TOKEN_FILE", str(token_file))
+    monkeypatch.setattr(
+        module,
+        "_post_bootstrap",
+        lambda *args, **kwargs: (_ for _ in ()).throw(socket.timeout("secret-material timeout")),
+    )
+
+    exit_code = module.main(["--yes"])
+    output = capsys.readouterr().out
+
+    assert exit_code == 1
+    assert "status_code: 0" in output
+    assert "error_reason: timeout" in output
+    assert "secret-material" not in output
+    assert "secret-invite-code" not in output
+    assert "inviteCode" not in output
+    assert not token_file.exists()
+
+
+def test_invalid_json_response_prints_diagnostic(monkeypatch, capsys, tmp_path):
+    module = _load_module()
+    token_file = tmp_path / "invalid-json.runtime-token.json"
+
+    monkeypatch.setenv("CONFIG_CENTER_INVITE_CODE", "secret-invite-code")
+    monkeypatch.setenv("CONFIG_CENTER_RUNTIME_TOKEN_FILE", str(token_file))
+    monkeypatch.setattr(
+        module,
+        "_post_bootstrap",
+        lambda *args, **kwargs: (201, "runtimeConfigToken secret-material not-json"),
+    )
+
+    exit_code = module.main(["--yes"])
+    output = capsys.readouterr().out
+
+    assert exit_code == 1
+    assert "status_code: 201" in output
+    assert "Config center bootstrap failed" in output
+    assert "error_reason: invalid_json_response" in output
+    assert "error_type: JSONDecodeError" in output
+    assert "runtimeConfigToken" not in output
+    assert "secret-material" not in output
+    assert "secret-invite-code" not in output
+    assert "inviteCode" not in output
+    assert not token_file.exists()
+
+
+def test_unexpected_error_prints_type_without_stack_or_secret(monkeypatch, capsys, tmp_path):
+    module = _load_module()
+    token_file = tmp_path / "unexpected.runtime-token.json"
+
+    monkeypatch.setenv("CONFIG_CENTER_INVITE_CODE", "secret-invite-code")
+    monkeypatch.setenv("CONFIG_CENTER_RUNTIME_TOKEN_FILE", str(token_file))
+    monkeypatch.setattr(
+        module,
+        "_post_bootstrap",
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("secret-material runtimeConfigToken")),
+    )
+
+    exit_code = module.main(["--yes"])
+    output = capsys.readouterr().out
+
+    assert exit_code == 1
+    assert "status_code: 0" in output
+    assert "error_reason: unexpected_error" in output
+    assert "error_type: RuntimeError" in output
+    assert "Traceback" not in output
+    assert "runtimeConfigToken" not in output
+    assert "secret-material" not in output
+    assert "secret-invite-code" not in output
+    assert "inviteCode" not in output
     assert not token_file.exists()
 
 

@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
+import socket
 from pathlib import Path
 from urllib import error, request
 
@@ -13,6 +15,7 @@ DEFAULT_PROJECT_CODE = "zhongcaoji"
 DEFAULT_RUNTIME = "python"
 DEFAULT_LOCAL_WORKSPACE_ROOT = str(ROOT_DIR)
 DEFAULT_RUNTIME_TOKEN_FILE = ".config-center/test.runtime-token.json"
+SENSITIVE_DIAGNOSTIC_LABELS = ("inviteCode", "runtimeConfigToken", "LLM_API_KEY", "secret-material")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -69,14 +72,63 @@ def _post_bootstrap(base_url: str, payload: dict[str, str]) -> tuple[int, str]:
         return int(response.getcode()), response.read().decode("utf-8", errors="replace")
 
 
-def _print_summary(config: dict[str, str], *, status_code: int | None = None) -> None:
+def _print_summary(
+    config: dict[str, str],
+    *,
+    status_code: int | None = None,
+    include_invite_status: bool = True,
+) -> None:
     print(f"projectCode: {config['project_code']}")
     print(f"runtime: {config['runtime']}")
     print(f"localWorkspaceRoot: {config['local_workspace_root']}")
-    print(f"inviteCode: {'configured' if config['invite_code'] else 'missing'}")
+    if include_invite_status:
+        print(f"inviteCode: {'configured' if config['invite_code'] else 'missing'}")
     print(f"runtimeTokenFile: {config['runtime_token_file']}")
     if status_code is not None:
         print(f"status_code: {status_code}")
+
+
+def _sanitize_diagnostic_text(value: object, config: dict[str, str], *, limit: int = 200) -> str:
+    text = str(value or "").replace("\r", " ").replace("\n", " ").strip()
+    for key in ("inviteCode", "runtimeConfigToken", "LLM_API_KEY"):
+        text = re.sub(
+            rf'("{re.escape(key)}"\s*:\s*)"[^"]*"',
+            r'\1"[redacted]"',
+            text,
+            flags=re.IGNORECASE,
+        )
+        text = re.sub(
+            rf"({re.escape(key)}\s*[:=]\s*)\S+",
+            r"\1[redacted]",
+            text,
+            flags=re.IGNORECASE,
+        )
+    if config["invite_code"]:
+        text = text.replace(config["invite_code"], "[redacted]")
+    for label in SENSITIVE_DIAGNOSTIC_LABELS:
+        text = text.replace(label, "[redacted]")
+    return text[:limit]
+
+
+def _read_http_error_preview(exc: error.HTTPError, config: dict[str, str]) -> str:
+    try:
+        body = exc.read()
+    except Exception:
+        return ""
+    if not body:
+        return ""
+    return _sanitize_diagnostic_text(body.decode("utf-8", errors="replace"), config)
+
+
+def _print_failure_diagnostics(
+    *,
+    error_reason: str,
+    diagnostic_lines: list[tuple[str, str]] | None = None,
+) -> None:
+    print(f"error_reason: {error_reason}")
+    for key, value in diagnostic_lines or []:
+        if value:
+            print(f"{key}: {value}")
 
 
 def _runtime_token_path(config: dict[str, str]) -> Path:
@@ -159,37 +211,69 @@ def main(argv: list[str] | None = None) -> int:
     payload = build_request_payload(config)
     status_code = 0
     response_body = ""
+    error_reason = ""
+    diagnostic_lines: list[tuple[str, str]] = []
     try:
         status_code, response_body = _post_bootstrap(config["base_url"], payload)
         success = 200 <= status_code < 300
     except error.HTTPError as exc:
         status_code = int(exc.code)
+        error_reason = "http_error"
+        diagnostic_lines.append(("error_type", "HTTPError"))
+        response_preview = _read_http_error_preview(exc, config)
+        if response_preview:
+            diagnostic_lines.append(("response_preview", response_preview))
         success = False
-    except error.URLError:
+    except error.URLError as exc:
+        reason = getattr(exc, "reason", "")
+        if isinstance(reason, (TimeoutError, socket.timeout)):
+            error_reason = "timeout"
+        else:
+            error_reason = "url_error"
+            diagnostic_lines.append(("reason_type", type(reason).__name__))
+            reason_text = _sanitize_diagnostic_text(reason, config, limit=120)
+            if reason_text:
+                diagnostic_lines.append(("reason", reason_text))
         success = False
-    except Exception:
+    except (TimeoutError, socket.timeout):
+        error_reason = "timeout"
         success = False
+    except Exception as exc:
+        error_reason = "unexpected_error"
+        diagnostic_lines.append(("error_type", type(exc).__name__))
+        success = False
+
+    if not success:
+        _print_summary(config, status_code=status_code, include_invite_status=False)
+        print("Config center bootstrap failed")
+        _print_failure_diagnostics(
+            error_reason=error_reason or "http_status_error",
+            diagnostic_lines=diagnostic_lines,
+        )
+        return 1
+
+    try:
+        response_payload = json.loads(response_body)
+    except json.JSONDecodeError:
+        _print_summary(config, status_code=status_code, include_invite_status=False)
+        print("Config center bootstrap failed")
+        _print_failure_diagnostics(
+            error_reason="invalid_json_response",
+            diagnostic_lines=[("error_type", "JSONDecodeError")],
+        )
+        return 1
 
     _print_summary(config, status_code=status_code)
-    if success:
-        print("Config center bootstrap succeeded")
-        try:
-            response_payload = json.loads(response_body) if response_body else {}
-        except json.JSONDecodeError:
-            response_payload = {}
-
-        runtime_config_token = _extract_runtime_config_token(response_payload)
-        if runtime_config_token:
-            _write_runtime_token_file(config, runtime_config_token, overwrite=args.overwrite_token)
-        else:
-            print("Config center bootstrap succeeded, but runtimeConfigToken was not found in response.")
-            if _has_string_runtime_token_file(response_payload):
-                print("runtimeTokenFile returned but runtimeConfigToken was not found inside it.")
-            print(f"Response keys: {_top_level_keys(response_payload)}")
-        return 0
-
-    print("Config center bootstrap failed")
-    return 1
+    print("Config center bootstrap succeeded")
+    runtime_config_token = _extract_runtime_config_token(response_payload)
+    if runtime_config_token:
+        _write_runtime_token_file(config, runtime_config_token, overwrite=args.overwrite_token)
+    else:
+        print("Config center bootstrap succeeded, but runtimeConfigToken was not found in response.")
+        if _has_string_runtime_token_file(response_payload):
+            print("runtimeTokenFile returned but runtimeConfigToken was not found inside it.")
+        print(f"Response keys: {_top_level_keys(response_payload)}")
+    return 0
 
 
 if __name__ == "__main__":
